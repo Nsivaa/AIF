@@ -1,69 +1,66 @@
 import numpy as np
-from typing import Tuple, List
+from typing import List, Tuple
+from queue import PriorityQueue
+from map_utils import get_valid_moves
 
+def chebyshev_distance(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    return max(abs(x1 - x2), abs(y1 - y2))
 
-def get_player_location(game_map: np.ndarray, symbol : str = "@") -> Tuple[int, int]:
-    x, y = np.where(game_map == ord(symbol))
-    return (x[0], y[0])
-    
+def build_path(parent: dict, target: Tuple[int, int]) -> List[Tuple[int, int]]:
+    path = []
+    while target is not None:
+        path.append(target)
+        target = parent[target]
+    path.reverse()
+    return path
 
-#where the stairs are
-def get_target_location(game_map: np.ndarray, symbol : str = ">") -> Tuple[int, int]:
-    x, y = np.where(game_map == ord(symbol))
-    return (x[0], y[0])
+def a_star(game_map: np.ndarray, colors: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], h: callable) -> List[Tuple[int, int]]:
+    # initialize open and close list
+    open_list = PriorityQueue()
+    close_list = []
+    # additional dict which maintains the nodes in the open list for an easier access and check
+    support_list = {}
 
+    starting_state_g = 0
+    starting_state_h = h(start, target)
+    starting_state_f = starting_state_g + starting_state_h
 
-def get_monster_location(game_map: np.ndarray):
-    monsters = "LNHODT" 
-    for monster in monsters:
-        locations = np.where(game_map == ord(monster))
-        if locations[0].size > 0:  # If a monster is found, return its position
-            return locations[0][0], locations[1][0]
-    return None  # Otherwise return None
+    open_list.put((starting_state_f, (start, starting_state_g)))
+    support_list[start] = starting_state_g
+    parent = {start: None}
 
+    while not open_list.empty():
+        # get the node with lowest f
+        _, (current, current_cost) = open_list.get()
+        # add the node to the close list
+        close_list.append(current)
 
-def is_wall(position_element: int) -> bool:
-    obstacles = "|- "
-    return chr(position_element) in obstacles
- 
+        if current == target:
+            print("Target found!")
+            path = build_path(parent, target)
+            return path
 
-def is_tree(x, y, colors) -> bool:
-    tree = 2
-    return colors[x, y] == tree
+        for neighbor in get_valid_moves(game_map, colors, current):
+            # check if neighbor in close list, if so continue
+            if neighbor in close_list:
+                continue
+            # compute neighbor g, h and f values
+            neighbor_g = 1 + current_cost
+            neighbor_h = h(neighbor, target)
+            neighbor_f = neighbor_g + neighbor_h
+            parent[neighbor] = current
+            neighbor_entry = (neighbor_f, (neighbor, neighbor_g))
+            # if neighbor in open_list
+            if neighbor in support_list.keys():
+                # if neighbor_g is greater or equal to the one in the open list, continue
+                if neighbor_g >= support_list[neighbor]:
+                    continue
+            
+            # add neighbor to open list and update support_list
+            open_list.put(neighbor_entry)
+            support_list[neighbor] = neighbor_g
 
-
-def is_cloud(position_element, x, y, colors) -> bool:
-    cloud = "#"
-    return (colors[x, y] != 2) & (chr(position_element) == cloud)
-
-
-def get_valid_moves(game_map: np.ndarray, current_position: Tuple[int, int], colors: np.ndarray) -> List[Tuple[int, int]]:
-    x_limit, y_limit = game_map.shape
-    valid = []
-    x, y = current_position    
-    # North
-    if y - 1 > 0 and not is_wall(game_map[x, y-1]) and not is_tree(x, y-1, colors):
-        valid.append((x, y-1)) 
-    # East 
-    if x + 1 < x_limit and not is_wall(game_map[x+1, y]) and not is_tree(x+1, y, colors):
-        valid.append((x+1, y)) 
-    # South
-    if y + 1 < y_limit and not is_wall(game_map[x, y+1]) and not is_tree(x, y+1, colors):
-        valid.append((x, y+1)) 
-    # West
-    if x - 1 > 0 and not is_wall(game_map[x-1, y]) and not is_tree(x-1, y, colors):
-        valid.append((x-1, y))
-    # Left - Down
-    if x - 1 > 0 and y - 1 > 0 and not is_wall(game_map[x-1, y-1]) and not is_tree(x-1, y-1, colors):
-        valid.append((x-1, y-1))
-    # Rigth - Up
-    if x + 1 < x_limit and y + 1 < y_limit and not is_wall(game_map[x+1, y+1]) and not is_tree(x+1, y+1, colors):
-        valid.append((x+1, y+1))
-    # Left - Up
-    if x - 1 > 0 and y + 1 < y_limit and not is_wall(game_map[x-1, y+1]) and not is_tree(x-1, y+1, colors):
-        valid.append((x-1, y+1))
-    # Rigth - Down 
-    if x + 1 < x_limit and y - 1 > 0 and not is_wall(game_map[x+1, y-1]) and not is_tree(x+1, y-1, colors):
-        valid.append((x+1, y-1))
-
-    return valid
+    print("Target node not found!")
+    return None

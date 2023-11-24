@@ -42,20 +42,20 @@ def actions_from_path(start: Tuple[int, int], path: List[Tuple[int, int]]) -> Li
         "W": 3
     }
     actions = []
-    x_s, y_s = start
+    row_s, col_s = start
     for (x, y) in path:
-        if x_s == x:
-            if y_s > y:
+        if row_s == x:
+            if col_s > y:
                 actions.append(action_map["W"])
             else: actions.append(action_map["E"])
-        elif y_s == y:
-            if x_s > x:
+        elif col_s == y:
+            if row_s > x:
                 actions.append(action_map["N"])
             else: actions.append(action_map["S"])
         else:
             raise Exception("x and y can't change at the same time. oblique moves not allowed!")
-        x_s = x
-        y_s = y
+        row_s = x
+        col_s = y
     
     return actions
 
