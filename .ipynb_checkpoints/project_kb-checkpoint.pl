@@ -1,18 +1,15 @@
-:- dynamic position/4.
-:- dynamic stepping_on/3.
-:- dynamic unsafe_position/2.
+
 
 % USEFUL?? 
-% action(run(OppositeDirection)) :- position(agent, _, AgentR, AgentC), position(enemy, _, EnemyR, EnemyC),
-%                                  is_close(AgentR, AgentC, EnemyR, EnemyC), \+ healthy,
-%                                  next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
-%                                  opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
+action(run(OppositeDirection)) :- position(agent, _, AgentR, AgentC), position(enemy, _, EnemyR, EnemyC),
+                                  is_close(AgentR, AgentC, EnemyR, EnemyC), \+ healthy,
+                                  next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
+                                  opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
 
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
-action(move(Direction)) :- position(agent, _, AgentR, AgentC), position(stairs, StairsR, StairsC),
-                           next_step(AgentR, AgentC, StairsR, StairsC, D), safe_direction(AgentR, AgentC, D, Direction).
+action(move(Direction)) :- position(agent, _, AgentR, AgentC), position(comestible, apple, AppleR, AppleC),
+                           next_step(AgentR, AgentC, AppleR, AppleC, D), safe_direction(AgentR, AgentC, D, Direction).
 
-% TODO: WHEN STAIR POISION IS NOT KNOWN, WE JUST EXPLORE
 
 % test the different condition for closeness
 % two objects are close if they are at 1 cell distance, including diagonals
@@ -45,7 +42,7 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
 unsafe_position(R, C) :- position(trap, _, R, C).
 unsafe_position(R, C) :- position(enemy, _, R, C).
 unsafe_position(R,C) :- position(enemy, _, ER, EC), is_close(ER, EC, R, C).
-unsafe_position(_,_) :- fail.
+
 
 
 %%%% known facts %%%%
@@ -84,7 +81,12 @@ close_direction(southwest, west).
 close_direction(west, northwest).
 close_direction(northwest, north).
 
+unsafe_position(_,_) :- fail.
 safe_position(R,C) :- \+ unsafe_position(R,C).
 
 is_walkable(floor).
 is_walkable(cloud).
+
+% NOT NECESSARY?
+is walkable(_) :- fail.
+

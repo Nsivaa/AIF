@@ -15,6 +15,8 @@ def define_reward():
 
 def perform_action(action, env):
 
+    # Movement/Attack/Run/Get_To_Weapon actions
+    # in the end, they all are movement in a direction
     if 'northeast' in action: action_id = 4
     elif 'southeast' in action: action_id = 5
     elif 'southwest' in action: action_id = 6
@@ -28,7 +30,7 @@ def perform_action(action, env):
     obs, reward, done, info = env.step(action_id)
     return obs, reward, done, info
 
-def process_state(obs: dict, kb: Prolog, monster: list):
+def process_state(obs: dict, kb: Prolog, monster: List(str), weapon: str):
     kb.retractall("position(_,_,_,_)")
 
     for i in range(21):
@@ -47,19 +49,37 @@ def process_state(obs: dict, kb: Prolog, monster: list):
                     kb.asserta(f'position(player, {i}, {j})')
                 elif 'dark' in obj:
                     kb.asserta(f'position(dark, {i}, {j})')
-                elif len(set(monster).intersection(obj)) != 0:
-                    monster_name = set(monster).intersection(obj)
-                    kb.asserta(f'position(enemy, {monster_name[0].replace(" ", "")}, {i}, {j})')                    
-                else:
-                    print("nothing to update")
+                elif obj in monster:
+                    kb.asserta(f'position(enemy, {monster.replace(" ", "")}, {i}, {j})')                    
+
+                
+    kb.retractall("wields_weapon(_,_)")
+    kb.retractall("has(agent,_,_)")    
+    for obj in obs['inv_strs']:
+        obj = bytes(obj).decode('utf-8').rstrip('\x00')
+        if 'weapon in hand' in obj:
+            # the actual name of the weapon is in position 2
+            wp = obj.split()[2]
+            kb.asserta(f'wields_weapon(agent, {wp})')
+        if 'apple' in obj:
+            kb.asserta('has(agent, comestible, apple)')
 
     kb.retractall("position(agent,_,_,_)")
+    kb.retractall("health(_)")
     kb.asserta(f"position(agent, _, {obs['blstats'][1]}, {obs['blstats'][0]})")
+    kb.asserta(f"health({int(obs['blstats'][10]/obs['blstats'][11]*100)})")
 
     message = bytes(obs['message']).decode('utf-8').rstrip('\x00')
     if 'You see here' in message:
-        if 'down' in message:
-            kb.asserta('stepping_on(agent, down_stairs)')
+        if 'apple' in message:
+            kb.asserta('stepping_on(agent, comestible, apple)')
+        if 'sword' in message:
+            kb.asserta(f'stepping_on(agent, weapon, {weapon})')
+
+    for m in message.split('.'):
+        if 'picks' in m:
+            if 'apple' in m:
+                print('The enemy took your apple!')
 
 # indexes for showing the image are hard-coded
 def show_match(states: list):
