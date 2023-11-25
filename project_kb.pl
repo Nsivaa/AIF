@@ -45,6 +45,8 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
 
 % a square if unsafe if there is a trap or an enemy or a tree
 
+%% TODO: CHECK FOR WALLS. TOP LEFT CORNER OF MAP IS POS.[7,34]
+
 unsafe_position(R,C) :- position(enemy, R, C).
 unsafe_position(R,C) :- position(tree, R, C).
 unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
@@ -88,6 +90,3 @@ close_direction(west, northwest).
 close_direction(northwest, north).
 
 safe_position(R,C) :- \+ unsafe_position(R,C).
-
-is_walkable(floor).
-is_walkable(cloud).
