@@ -44,7 +44,7 @@ def process_state(obs: dict, kb: Prolog, monster: list):
                 elif 'down' in obj:
                     kb.asserta(f'position(down_stairs, {i}, {j})')
                 elif 'human' in obj:
-                    kb.asserta(f'position(player, {i}, {j})')
+                    kb.asserta(f'position(agent, {i}, {j})')
                 elif 'dark' in obj:
                     kb.asserta(f'position(dark, {i}, {j})')
                 elif len(set(monster).intersection(obj)) != 0:

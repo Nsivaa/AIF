@@ -1,18 +1,18 @@
-:- dynamic position/4.
+:- dynamic position/3.
 :- dynamic stepping_on/3.
 :- dynamic unsafe_position/2.
 
 % USEFUL?? 
-% action(run(OppositeDirection)) :- position(agent, _, AgentR, AgentC), position(enemy, _, EnemyR, EnemyC),
-%                                  is_close(AgentR, AgentC, EnemyR, EnemyC), \+ healthy,
+% action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
+%                                  is_close(AgentR, AgentC, EnemyR, EnemyC),
 %                                  next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
 %                                  opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
 
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
-action(move(Direction)) :- position(agent, _, AgentR, AgentC), position(stairs, StairsR, StairsC),
+action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
                            next_step(AgentR, AgentC, StairsR, StairsC, D), safe_direction(AgentR, AgentC, D, Direction).
 
-% TODO: WHEN STAIR POISION IS NOT KNOWN, WE JUST EXPLORE
+% TODO: WHEN STAIR POISITON IS NOT KNOWN, WE JUST EXPLORE
 
 % test the different condition for closeness
 % two objects are close if they are at 1 cell distance, including diagonals
@@ -42,9 +42,8 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
                                       ).
 
 % a square if unsafe if there is a trap or an enemy
-unsafe_position(R, C) :- position(trap, _, R, C).
-unsafe_position(R, C) :- position(enemy, _, R, C).
-unsafe_position(R,C) :- position(enemy, _, ER, EC), is_close(ER, EC, R, C).
+unsafe_position(R,C) :- position(enemy, R, C).
+unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
 unsafe_position(_,_) :- fail.
 
 
