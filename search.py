@@ -1,12 +1,32 @@
 import numpy as np
 from typing import List, Tuple
 from queue import PriorityQueue
-from map_utils import get_valid_moves
+from map_utils import get_valid_movesadd, get_monster_location, is_cloud
+import math
 
 def chebyshev_distance(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
     return max(abs(x1 - x2), abs(y1 - y2))
+
+def heuristic(game_map, point1, point2):
+    dist = chebyshev_distance(point1, point2)
+    monst = get_monster_location(game_map)
+    penalty = 0
+
+    if monst != None:
+        dist_monst = euclidean_distance(point1, monst)
+        if dist_monst < 3:
+            penalty = 100
+        elif 3 <= dist_monst <= 7:
+            penalty = 50
+    return dist + penalty
+
+
+def euclidean_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> float:
+    x1, y1 = point1
+    x2, y2 = point2
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 def build_path(parent: dict, target: Tuple[int, int]) -> List[Tuple[int, int]]:
     path = []
@@ -24,7 +44,7 @@ def a_star(game_map: np.ndarray, colors: np.ndarray, start: Tuple[int, int], tar
     support_list = {}
 
     starting_state_g = 0
-    starting_state_h = h(start, target)
+    starting_state_h = h(game_map, start, target)
     starting_state_f = starting_state_g + starting_state_h
 
     open_list.put((starting_state_f, (start, starting_state_g)))
@@ -48,7 +68,7 @@ def a_star(game_map: np.ndarray, colors: np.ndarray, start: Tuple[int, int], tar
                 continue
             # compute neighbor g, h and f values
             neighbor_g = 1 + current_cost
-            neighbor_h = h(neighbor, target)
+            neighbor_h = h(game_map, neighbor, target)
             neighbor_f = neighbor_g + neighbor_h
             parent[neighbor] = current
             neighbor_entry = (neighbor_f, (neighbor, neighbor_g))

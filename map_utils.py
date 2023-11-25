@@ -14,14 +14,15 @@ class _Characters(Enum):
     STAIRS = ">"
 
 class _Moves(Enum):
-    NORTH: 0
-    EAST: 1
-    SOUTH: 2
-    WEST: 3
-    NORTH_WEST: 4
-    NORTH_EAST: 5
-    SOUTH_EAST: 6
-    SOUTH_WEST: 7
+    NORTH = 0
+    NORTH_EAST = 4
+    EAST = 1
+    SOUTH_EAST = 5
+    SOUTH = 2
+    SOUTH_WEST = 6
+    WEST = 3
+    NORTH_WEST = 7
+
 
 def get_player_location(game_map: np.ndarray, symbol : str = _Characters.PLAYER.value) -> Tuple[int, int]:
     """
@@ -146,6 +147,7 @@ def get_valid_moves(game_map: np.ndarray, colors: np.ndarray, current_position: 
         valid.append((x+1, y-1))
 
     return valid
+
 
 def actions_from_path(start: Tuple[int, int], path: List[Tuple[int, int]]) -> List[int]:
     """
