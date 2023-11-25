@@ -29,7 +29,7 @@ def perform_action(action, env):
     return obs, reward, done, info
 
 def process_state(obs: dict, kb: Prolog, monster: list):
-    kb.retractall("position(_,_,_,_)")
+    kb.retractall("position(_,_,_)")
 
     for i in range(21):
         for j in range(79):
@@ -50,8 +50,6 @@ def process_state(obs: dict, kb: Prolog, monster: list):
                 elif len(set(monster).intersection(obj)) != 0:
                     monster_name = set(monster).intersection(obj)
                     kb.asserta(f'position(enemy, {monster_name[0].replace(" ", "")}, {i}, {j})')                    
-                else:
-                    print("nothing to update")
 
     kb.retractall("position(agent,_,_,_)")
     kb.asserta(f"position(agent, _, {obs['blstats'][1]}, {obs['blstats'][0]})")
