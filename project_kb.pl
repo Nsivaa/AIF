@@ -16,6 +16,7 @@ action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs
 
 % test the different condition for closeness
 % two objects are close if they are at 1 cell distance, including diagonals
+
 is_close(R1,C1,R2,C2) :- R1 == R2, (C1 is C2+1; C1 is C2-1).
 is_close(R1,C1,R2,C2) :- C1 == C2, (R1 is R2+1; R1 is R2-1).
 is_close(R1,C1,R2,C2) :- (R1 is R2+1; R1 is R2-1), (C1 is C2+1; C1 is C2-1).
@@ -24,6 +25,7 @@ is_close(R1,C1,R2,C2) :- (R1 is R2+1; R1 is R2-1), (C1 is C2+1; C1 is C2-1).
 % check if the direction leads to a safe position
 % D = temporary direction - may be unsafe
 % Direction = the definitive direction 
+
 next_step(R1,C1,R2,C2, D) :-
     ( R1 == R2 -> ( C1 > C2 -> D = west; D = east );
     ( C1 == C2 -> ( R1 > R2 -> D = north; D = south);
@@ -31,9 +33,9 @@ next_step(R1,C1,R2,C2, D) :-
         ( C1 > C2 -> D = northwest; D = northeast );
         ( C1 > C2 -> D = southwest; D = southeast )
     ))).
-    % safe_direction(R1, C1, D, Direction).
 
-% check if the selected direction is safe
+% check if the selected direction is safe / walkable
+
 safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
                                       ( safe_position(NewR, NewC) -> Direction = D;
                                       % else, get a new close direction
@@ -41,8 +43,10 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
                                       close_direction(D, ND), safe_direction(R, C, ND, Direction)
                                       ).
 
-% a square if unsafe if there is a trap or an enemy
+% a square if unsafe if there is a trap or an enemy or a tree
+
 unsafe_position(R,C) :- position(enemy, R, C).
+unsafe_position(R,C) :- position(tree, R, C).
 unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
 unsafe_position(_,_) :- fail.
 
