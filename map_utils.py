@@ -104,7 +104,7 @@ def is_cloud(position_element: int, color_element: int) -> bool:
     Returns:
     - bool: True if the position element represents a cloud, False otherwise.
     """
-    return position_element == ord(_Characters.HASHTAG.value) and color_element == _Colors.WHITE.value
+    return position_element == ord(_Characters.HASHTAG.value) and color_element != _Colors.GREEN.value
 
 def get_valid_moves(game_map: np.ndarray, colors: np.ndarray, current_position: Tuple[int, int]) -> List[Tuple[int, int]]:
     """
@@ -161,25 +161,25 @@ def actions_from_path(start: Tuple[int, int], path: List[Tuple[int, int]]) -> Li
     - List[int]: A list of actions (moves) represented as integers.
     """
     actions = []
-    row_s, col_s = start
-    for (row, col) in path:
-        if row_s == row:
-            if col_s > col:
+    col_s, row_s = start
+    for (col, row) in path:
+        if col_s == col:
+            if row_s > row:
                 actions.append(_Moves.WEST.value)
             else: actions.append(_Moves.EAST.value)
-        elif col_s == col:
-            if row_s > row:
+        elif row_s == row:
+            if col_s > col:
                 actions.append(_Moves.NORTH.value)
             else: actions.append(_Moves.SOUTH.value)
-        elif row_s > row:
-            if col_s > col:
+        elif col_s > col:
+            if row_s > row:
                 actions.append(_Moves.NORTH_WEST.value)
             else: actions.append(_Moves.NORTH_EAST.value)
-        elif row_s < row:
-            if col_s > col:
+        elif col_s < col:
+            if row_s > row:
                 actions.append(_Moves.SOUTH_WEST.value)
             else: actions.append(_Moves.SOUTH_EAST.value)
-        row_s = row
         col_s = col
+        row_s = row
     
     return actions
