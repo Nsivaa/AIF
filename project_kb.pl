@@ -1,12 +1,11 @@
 :- dynamic position/3.
-:- dynamic stepping_on/3.
 :- dynamic unsafe_position/2.
 
-% USEFUL?? 
+
 % action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
-%                                  is_close(AgentR, AgentC, EnemyR, EnemyC),
-%                                  next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
-%                                  opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
+%                                   is_close(AgentR, AgentC, EnemyR, EnemyC),
+%                                   next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
+%                                   opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
 
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
@@ -45,11 +44,19 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
 
 % a square if unsafe if there is a trap or an enemy or a tree
 
-%% TODO: CHECK FOR WALLS. TOP LEFT CORNER OF MAP IS POS.[7,34]
+
 
 unsafe_position(R,C) :- position(enemy, R, C).
 unsafe_position(R,C) :- position(tree, R, C).
 unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
+
+%% CHECK FOR WALLS. 
+%% TOP LEFT CORNER OF MAP IS POS.[7,34]
+%% BOTTOM RIGHT CORNER OF MAP IS POS.[15,44]
+
+unsafe_position(R,_) :- R < 7; R > 15.
+unsafe_position(_,C) :- C < 34; C > 44.
+
 unsafe_position(_,_) :- fail.
 
 
@@ -80,6 +87,8 @@ resulting_position(R, C, NewR, NewC, southeast) :-
 resulting_position(R, C, NewR, NewC, southwest) :-
     NewR is R+1, NewC is C-1.
 
+
+
 close_direction(north, northeast).
 close_direction(northeast, east).
 close_direction(east, southeast).
@@ -88,5 +97,8 @@ close_direction(south, southwest).
 close_direction(southwest, west).
 close_direction(west, northwest).
 close_direction(northwest, north).
+
+% close_direction(D,D2) :- close_direction(D2,D).
+
 
 safe_position(R,C) :- \+ unsafe_position(R,C).
