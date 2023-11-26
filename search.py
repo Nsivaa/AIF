@@ -1,34 +1,42 @@
-import numpy as np
-from typing import List, Tuple
 from queue import PriorityQueue
-from map_utils import get_valid_movesadd, get_monster_location, is_cloud
-import math
+from typing import List, Tuple
+from map_utils import get_valid_moves, is_cloud, get_monster_location
+import numpy as np
+
+MIN_COST = 1
+MAX_COST = 10**5
 
 def chebyshev_distance(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
     return max(abs(x1 - x2), abs(y1 - y2))
 
-def heuristic(game_map, point1, point2):
-    dist = chebyshev_distance(point1, point2)
-    monst = get_monster_location(game_map)
-    penalty = 0
-
-    if monst != None:
-        dist_monst = euclidean_distance(point1, monst)
-        if dist_monst < 3:
-            penalty = 100
-        elif 3 <= dist_monst <= 7:
-            penalty = 50
-    return dist + penalty
-
-
-def euclidean_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> float:
+def _euclidean_distance_prime(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    distance = (x1 - x2)**2 + (y1 - y2)**2
 
-def build_path(parent: dict, target: Tuple[int, int]) -> List[Tuple[int, int]]:
+    if distance == 0:
+        return MAX_COST, MAX_COST 
+    
+    dx = (x1 - x2) / distance
+    dy = (y1 - y2) / distance
+    
+    return dx, dy
+
+def _compute_cost(position: Tuple[int, int], color_char: int, monster_position: Tuple[int, int] = None) -> int:
+    if monster_position is None:
+        if is_cloud(position, color_char):
+            return MIN_COST
+        else:
+            return MIN_COST
+    else:
+        if is_cloud(position, color_char):
+            return MIN_COST
+        else:
+            return np.sum(_euclidean_distance_prime(position, monster_position))
+
+def _build_path(parent: dict, target: Tuple[int, int]) -> List[Tuple[int, int]]:
     path = []
     while target is not None:
         path.append(target)
@@ -36,7 +44,7 @@ def build_path(parent: dict, target: Tuple[int, int]) -> List[Tuple[int, int]]:
     path.reverse()
     return path
 
-def a_star(game_map: np.ndarray, colors: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], h: callable) -> List[Tuple[int, int]]:
+def a_star(game_map: np.ndarray, color_matrix: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], h: callable) -> List[Tuple[int, int]]:
     # initialize open and close list
     open_list = PriorityQueue()
     close_list = []
@@ -44,7 +52,7 @@ def a_star(game_map: np.ndarray, colors: np.ndarray, start: Tuple[int, int], tar
     support_list = {}
 
     starting_state_g = 0
-    starting_state_h = h(game_map, start, target)
+    starting_state_h = h(start, target)
     starting_state_f = starting_state_g + starting_state_h
 
     open_list.put((starting_state_f, (start, starting_state_g)))
@@ -59,16 +67,16 @@ def a_star(game_map: np.ndarray, colors: np.ndarray, start: Tuple[int, int], tar
 
         if current == target:
             print("Target found!")
-            path = build_path(parent, target)
+            path = _build_path(parent, target)
             return path
 
-        for neighbor in get_valid_moves(game_map, colors, current):
+        for neighbor in get_valid_moves(game_map, color_matrix, current):
             # check if neighbor in close list, if so continue
             if neighbor in close_list:
                 continue
             # compute neighbor g, h and f values
-            neighbor_g = 1 + current_cost
-            neighbor_h = h(game_map, neighbor, target)
+            neighbor_g = _compute_cost(neighbor, color_matrix[neighbor], get_monster_location(game_map)) + current_cost
+            neighbor_h = h(neighbor, target)
             neighbor_f = neighbor_g + neighbor_h
             parent[neighbor] = current
             neighbor_entry = (neighbor_f, (neighbor, neighbor_g))

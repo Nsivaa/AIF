@@ -15,12 +15,12 @@ class _Characters(Enum):
 
 class _Moves(Enum):
     NORTH = 0
-    NORTH_EAST = 4
     EAST = 1
-    SOUTH_EAST = 5
     SOUTH = 2
-    SOUTH_WEST = 6
     WEST = 3
+    NORTH_EAST = 4
+    SOUTH_EAST = 5
+    SOUTH_WEST = 6
     NORTH_WEST = 7
 
 
