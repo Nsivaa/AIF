@@ -30,6 +30,7 @@ def perform_action(action, env):
 
 def process_state(obs: dict, kb: Prolog, monster: list):
     kb.retractall("position(_,_,_)")
+    # kb.retractall("previous_agent_position(_,_)")
 
     for i in range(21):
         for j in range(79):
@@ -46,17 +47,16 @@ def process_state(obs: dict, kb: Prolog, monster: list):
                 elif 'dark' in obj:
                     kb.asserta(f'position(dark, {i}, {j})')
                 elif 'human' in obj:
-                    kb.asserta(f'position(agent, {i}, {j})')
+                    kb.asserta(f'position(agent, {i}, {j})') #maybe use info from obs?
                 elif len(set(monster).intersection(obj)) != 0:
                     monster_name = set(monster).intersection(obj)
                     kb.asserta(f'position(enemy, {monster_name[0].replace(" ", "")}, {i}, {j})')                    
     
     previous_pos = list(kb.query(f'position(agent,X,Y)'))
     if previous_pos:
-        print(f'PREVIOUS POS {previous_pos}')
-        X = previous_pos[0]['X']
-        Y = previous_pos[0]['Y']
-        kb.asserta(f'previous_agent_position({X} , {Y})')
+        prev_X = previous_pos[0]['X']
+        prev_Y = previous_pos[0]['Y']
+        kb.asserta(f'previous_agent_position({prev_X} , {prev_Y})')
     else:
         print(f'previous pos not available')
     

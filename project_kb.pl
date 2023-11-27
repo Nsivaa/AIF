@@ -2,10 +2,11 @@
 :- dynamic unsafe_position/2.
 :- dynamic previous_agent_position/2.
 
-% action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
-%                                   is_close(AgentR, AgentC, EnemyR, EnemyC),
-%                                   next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
-%                                   opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
+action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
+                                   is_close(AgentR, AgentC, EnemyR, EnemyC),
+                                   next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
+                                   opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
+
 
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
@@ -49,6 +50,9 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
 unsafe_position(R,C) :- position(enemy, R, C).
 unsafe_position(R,C) :- position(tree, R, C).
 unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
+
+% WE AVOID MOVING BACK TO THE PREVIOUS TILE TO AVOID LOOPS
+unsafe_position(R,C) :- previous_agent_position(R,C). 
 
 %% CHECK FOR WALLS. 
 %% TOP LEFT CORNER OF MAP IS POS.[7,34]
@@ -100,5 +104,5 @@ close_direction(northwest, north).
 
 % close_direction(D,D2) :- close_direction(D2,D).
 
-
+previous_agent_position(_,_) :- fail.
 safe_position(R,C) :- \+ unsafe_position(R,C).
