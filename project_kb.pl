@@ -1,6 +1,6 @@
 :- dynamic position/3.
 :- dynamic unsafe_position/2.
-
+:- dynamic previous_agent_position/2.
 
 % action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
 %                                   is_close(AgentR, AgentC, EnemyR, EnemyC),

@@ -33,7 +33,7 @@ def process_state(obs: dict, kb: Prolog, monster: list):
 
     for i in range(21):
         for j in range(79):
-            if not (obs['screen_descriptions'][i][j] == 0).all(): #.all() returns TRUE if all the items are true:???
+            if not (obs['screen_descriptions'][i][j] == 0).all():
                 obj = bytes(obs['screen_descriptions'][i][j]).decode('utf-8').rstrip('\x00')
                 if 'tree' in obj:
                     kb.asserta(f'position(tree, {i}, {j})')
@@ -43,21 +43,26 @@ def process_state(obs: dict, kb: Prolog, monster: list):
                     kb.asserta(f'position(floor, {i}, {j})')
                 elif 'down' in obj:
                     kb.asserta(f'position(down_stairs, {i}, {j})')
-                elif 'human' in obj:
-                    kb.asserta(f'position(agent, {i}, {j})')
                 elif 'dark' in obj:
                     kb.asserta(f'position(dark, {i}, {j})')
+                elif 'human' in obj:
+                    kb.asserta(f'position(agent, {i}, {j})')
                 elif len(set(monster).intersection(obj)) != 0:
                     monster_name = set(monster).intersection(obj)
                     kb.asserta(f'position(enemy, {monster_name[0].replace(" ", "")}, {i}, {j})')                    
-
+    
+    previous_pos = list(kb.query(f'position(agent,X,Y)'))
+    if previous_pos:
+        print(f'PREVIOUS POS {previous_pos}')
+        X = previous_pos[0]['X']
+        Y = previous_pos[0]['Y']
+        kb.asserta(f'previous_agent_position({X} , {Y})')
+    else:
+        print(f'previous pos not available')
+    
     kb.retractall("position(agent,_,_,_)")
     kb.asserta(f"position(agent, _, {obs['blstats'][1]}, {obs['blstats'][0]})")
 
-    message = bytes(obs['message']).decode('utf-8').rstrip('\x00')
-    if 'You see here' in message:
-        if 'down' in message:
-            kb.asserta('stepping_on(agent, down_stairs)')
 
 # indexes for showing the image are hard-coded
 def show_match(states: list):
