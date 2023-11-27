@@ -9,8 +9,9 @@ def define_reward():
     reward_manager = RewardManager()
     #THERE IS NO DEATH EVENT SO WE USE THIS
     # -> DEATH SHOULD BE PENALISED MORE THAN RUNNING OUT OF STEPS
-    reward_manager.add_message_event(msgs=["END STATUS: DEATH"], reward= -0.5, terminal_required=False, terminal_sufficient=True) #???
-
+    # reward_manager.add_message_event(msgs=["End status: DEATH"], reward= -0.5, terminal_required=False, terminal_sufficient=True) 
+    # ^ DOESNT WORK
+    
     return reward_manager
 
 def perform_action(action, env):
@@ -30,7 +31,9 @@ def perform_action(action, env):
 
 def process_state(obs: dict, kb: Prolog, monster: list):
     kb.retractall("position(_,_,_)")
-    # kb.retractall("previous_agent_position(_,_)")
+    
+    # if steps %2 == 0 and steps != 0:
+    #kb.retractall("previous_agent_position(_,_)")
 
     for i in range(21):
         for j in range(79):

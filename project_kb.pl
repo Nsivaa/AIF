@@ -40,6 +40,13 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
                                       ( safe_position(NewR, NewC) -> Direction = D;
                                       % else, get a new close direction
                                       % and check its safety
+                                      close_direction(D, ND), safe_direction(R, C, ND, Direction), safe_position(R, C)
+                                      ).
+% REDUCES LOOPS?  
+safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
+                                      ( safe_position(NewR, NewC) -> Direction = D;
+                                      % else, get a new close direction
+                                      % and check its safety
                                       close_direction(D, ND), safe_direction(R, C, ND, Direction)
                                       ).
 
