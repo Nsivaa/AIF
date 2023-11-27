@@ -142,17 +142,40 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
     return None
 
 def dynamic_pathfinding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], heuristic: callable):
+    """
+    Finds the dynamic path from the start position to the target position considering the moving monster.
+
+    Args:
+        game_map (np.ndarray): The game map.
+        color_map (np.ndarray): The color map.
+        start (Tuple[int, int]): The start position.
+        target (Tuple[int, int]): The target position.
+        heuristic (callable): The heuristic function.
+
+    Returns:
+        List: The list of actions to reach the target position.
+    """
     path = a_star(game_map, color_map, start, target, heuristic)
     actions = actions_from_path(start, path[1:])
-    for index, action in enumerate(actions):
+    for index, _ in enumerate(actions):
         if get_monster_location(game_map) is not None:
             new_path = a_star(game_map, color_map, path[index+1], target, heuristic)
             del actions[index+1:]
             actions.extend(actions_from_path(path[index+1], new_path[1:]))
     return actions
 
-
 def render_actions(actions: List, env, game: np.ndarray):
+    """
+    Renders the actions in the game environment.
+
+    Args:
+        actions (List): The list of actions.
+        env: The game environment.
+        game (np.ndarray): The game map.
+
+    Returns:
+        None
+    """
     image = plt.imshow(game[100:270, 500:760])
     for action in actions:
         s, _, done, info = env.step(action)
