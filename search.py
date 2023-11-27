@@ -2,7 +2,10 @@ import math
 from queue import PriorityQueue
 from typing import Dict, List, Tuple
 import numpy as np
-from map_utils import get_monster_location, get_valid_moves, is_cloud
+from map_utils import get_monster_location, get_valid_moves, is_cloud, actions_from_path
+import IPython.display as display
+import matplotlib.pyplot as plt
+
 
 MIN_COST = 1
 MAX_COST = 10**5
@@ -137,3 +140,33 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
                 came_from[neighbor] = current               #update parent node
 
     return None
+
+def dynamic_pathfinding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], heuristic: callable):
+    path = a_star(game_map, color_map, start, target, heuristic)
+    actions = actions_from_path(start, path[1:])
+    for index, action in enumerate(actions):
+        if get_monster_location(game_map) is not None:
+            new_path = a_star(game_map, color_map, path[index+1], target, heuristic)
+            del actions[index+1:]
+            actions.extend(actions_from_path(path[index+1], new_path[1:]))
+    return actions
+
+
+def render_actions(actions: List, env, game: np.ndarray):
+    image = plt.imshow(game[100:270, 500:760])
+    for action in actions:
+        s, _, done, info = env.step(action)
+        display.display(plt.gcf())
+        display.clear_output(wait=True)
+        image.set_data(s['pixel'][100:270, 500:760])
+        # Check if the game has ended
+        if done:
+            end_status = info.get('end_status')
+            if end_status == 2: 
+                print("The agent successfully completed the task!")
+                break
+            elif end_status == 1:
+                print("The agent died.")
+                break
+            else:
+                print("The game ended for other reasons.")
