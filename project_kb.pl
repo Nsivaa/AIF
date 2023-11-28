@@ -42,24 +42,15 @@ safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
                                       % and check its safety
                                       close_direction(D, ND), safe_direction(R, C, ND, Direction), safe_position(R, C)
                                       ).
-% REDUCES LOOPS?  
-safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
-                                      ( safe_position(NewR, NewC) -> Direction = D;
-                                      % else, get a new close direction
-                                      % and check its safety
-                                      close_direction(D, ND), safe_direction(R, C, ND, Direction)
-                                      ).
-
-% a square if unsafe if there is a trap or an enemy or a tree
 
 
+% unsafe/unwalkable positions
 
+
+unsafe_position(R,C) :- position(boulder, R, C).
 unsafe_position(R,C) :- position(enemy, R, C).
 unsafe_position(R,C) :- position(tree, R, C).
 unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
-
-% WE AVOID MOVING BACK TO THE PREVIOUS TILE TO AVOID LOOPS
-unsafe_position(R,C) :- previous_agent_position(R,C). 
 
 %% CHECK FOR WALLS. 
 %% TOP LEFT CORNER OF MAP IS POS.[7,34]
@@ -100,16 +91,27 @@ resulting_position(R, C, NewR, NewC, southwest) :-
 
 
 
-close_direction(north, northeast).
-close_direction(northeast, east).
-close_direction(east, southeast).
-close_direction(southeast, south).
-close_direction(south, southwest).
-close_direction(southwest, west).
-close_direction(west, northwest).
-close_direction(northwest, north).
+ close_direction(north, northwest).
+ close_direction(northwest, west).
+ close_direction(west, southwest).
+ close_direction(soutwest, south).
+ close_direction(south, southeast).
+ close_direction(southeast, east).
+ close_direction(east, northeast). 
+ close_direction(northeast, north).
+ 
+
+
+% close_direction(north, northeast).
+% close_direction(northeast, east).
+% close_direction(east, southeast).
+% close_direction(southeast, south).
+% close_direction(south, southwest).
+% close_direction(southwest, west).
+% close_direction(west, northwest).
+% close_direction(northwest, north).
 
 % close_direction(D,D2) :- close_direction(D2,D).
 
-previous_agent_position(_,_) :- fail.
+% previous_agent_position(_,_) :- fail.
 safe_position(R,C) :- \+ unsafe_position(R,C).

@@ -29,11 +29,11 @@ def perform_action(action, env):
     obs, reward, done, info = env.step(action_id)
     return obs, reward, done, info
 
-def process_state(obs: dict, kb: Prolog, monster: list):
+def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
     kb.retractall("position(_,_,_)")
     
-    # if steps %2 == 0 and steps != 0:
-    #kb.retractall("previous_agent_position(_,_)")
+    if steps %2 == 1 and steps != 0:
+        kb.retractall("previous_agent_position(_,_)")
 
     for i in range(21):
         for j in range(79):
@@ -51,10 +51,21 @@ def process_state(obs: dict, kb: Prolog, monster: list):
                     kb.asserta(f'position(dark, {i}, {j})')
                 elif 'human' in obj:
                     kb.asserta(f'position(agent, {i}, {j})') #maybe use info from obs?
-                elif len(set(monster).intersection(obj)) != 0:
-                    monster_name = set(monster).intersection(obj)
-                    kb.asserta(f'position(enemy, {monster_name[0].replace(" ", "")}, {i}, {j})')                    
-    
+                elif 'up' in obj:
+                    kb.asserta(f'position(up_stairs, {i}, {j})')
+                elif 'boulder' in obj:
+                    kb.asserta(f'position(boulder, {i}, {j})')
+                    
+                is_there_monster = [value for value in monsters if value in obj]
+                if (is_there_monster):
+                    kb.asserta(f'position(enemy, {i}, {j})')  
+                try:    
+                    enemies_list = list(kb.query('position(enemy,_,_)'))[0]
+                except Exception as e:
+                    enemies_list = None
+                if enemies_list is not None and len(enemies_list) != 0:
+                    print(f'ENEMIES: {enemies_list}')
+    '''            
     previous_pos = list(kb.query(f'position(agent,X,Y)'))
     if previous_pos:
         prev_X = previous_pos[0]['X']
@@ -62,7 +73,7 @@ def process_state(obs: dict, kb: Prolog, monster: list):
         kb.asserta(f'previous_agent_position({prev_X} , {prev_Y})')
     else:
         print(f'previous pos not available')
-    
+    '''
     kb.retractall("position(agent,_,_,_)")
     kb.asserta(f"position(agent, _, {obs['blstats'][1]}, {obs['blstats'][0]})")
 
@@ -71,7 +82,7 @@ def process_state(obs: dict, kb: Prolog, monster: list):
 def show_match(states: list):
     image = plt.imshow(states[0][115:275, 480:750])
     for state in states[1:]:
-        time.sleep(0.25)
+        time.sleep(1.25)
         display.display(plt.gcf())
         display.clear_output(wait=True)
         image.set_data(state[115:275, 480:750])
