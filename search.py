@@ -1,4 +1,5 @@
 import math
+import time
 from queue import PriorityQueue
 from typing import Dict, List, Tuple
 import numpy as np
@@ -179,6 +180,7 @@ def render_actions(actions: List, env, game: np.ndarray):
     image = plt.imshow(game[100:270, 500:760])
     for action in actions:
         s, _, done, info = env.step(action)
+        time.sleep(0.5)
         display.display(plt.gcf())
         display.clear_output(wait=True)
         image.set_data(s['pixel'][100:270, 500:760])
