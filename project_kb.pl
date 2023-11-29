@@ -1,32 +1,28 @@
 :- dynamic position/3.
 :- dynamic unsafe_position/2.
-:- dynamic previous_agent_position/2.
 
 action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
                                    is_close(AgentR, AgentC, EnemyR, EnemyC),
-                                   next_step(AgentR, AgentC, EnemyR, EnemyC, Direction),
+                                   resulting_direction(AgentR, AgentC, EnemyR, EnemyC, Direction),
                                    opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
 
 
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
-                           next_step(AgentR, AgentC, StairsR, StairsC, D), safe_direction(AgentR, AgentC, D, Direction).
+                           resulting_direction(AgentR, AgentC, StairsR, StairsC, D), safe_direction(AgentR, AgentC, D, Direction).
 
 % TODO: WHEN STAIR POISITON IS NOT KNOWN, WE JUST EXPLORE
 
-% test the different condition for closeness
-% two objects are close if they are at 1 cell distance, including diagonals
+% CHECKS IF TWO POSITIONS ARE CLOSE, I.E. IF THEY ARE AT 1 CELL DISTANCE
 
 is_close(R1,C1,R2,C2) :- R1 == R2, (C1 is C2+1; C1 is C2-1).
 is_close(R1,C1,R2,C2) :- C1 == C2, (R1 is R2+1; R1 is R2-1).
 is_close(R1,C1,R2,C2) :- (R1 is R2+1; R1 is R2-1), (C1 is C2+1; C1 is C2-1).
 
-% compute the direction given the starting point and the target position
-% check if the direction leads to a safe position
-% D = temporary direction - may be unsafe
-% Direction = the definitive direction 
 
-next_step(R1,C1,R2,C2, D) :-
+% COMPUTE THE RESULTING DIRECTION GIVEN STARTING AND TARGET POSITION
+
+resulting_direction(R1,C1,R2,C2, D) :-
     ( R1 == R2 -> ( C1 > C2 -> D = west; D = east );
     ( C1 == C2 -> ( R1 > R2 -> D = north; D = south);
     ( R1 > R2 ->
@@ -34,18 +30,19 @@ next_step(R1,C1,R2,C2, D) :-
         ( C1 > C2 -> D = southwest; D = southeast )
     ))).
 
-% check if the selected direction is safe / walkable
+% CHECK IF THE DIRECTION LEADS TO A SAFE POSITION
+% D = TEMPORARY DIRECTION - MAY BE UNSAFE
+% Direction = THE DEFINITIVE DIRECTION
 
 safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
                                       ( safe_position(NewR, NewC) -> Direction = D;
                                       % else, get a new close direction
                                       % and check its safety
-                                      close_direction(D, ND), safe_direction(R, C, ND, Direction), safe_position(R, C)
+                                      clock_close_direction(D, ND), safe_direction(R, C, ND, Direction), safe_position(R, C)
                                       ).
 
 
-% unsafe/unwalkable positions
-
+% UNSAFE/UNWALKABLE POSITIONS
 
 unsafe_position(R,C) :- position(boulder, R, C).
 unsafe_position(R,C) :- position(enemy, R, C).
@@ -61,16 +58,7 @@ unsafe_position(_,C) :- C < 34; C > 44.
 
 unsafe_position(_,_) :- fail.
 
-
-%%%% known facts %%%%
-opposite(north, south).
-opposite(south, north).
-opposite(east, west).
-opposite(west, east).
-opposite(northeast, southwest).
-opposite(southwest, northeast).
-opposite(northwest, southeast).
-opposite(southeast, northwest).
+% CALCULATES RESULTING COORDINATES GIVEN THE DIRECTION
 
 resulting_position(R, C, NewR, NewC, north) :-
     NewR is R-1, NewC = C.
@@ -90,28 +78,41 @@ resulting_position(R, C, NewR, NewC, southwest) :-
     NewR is R+1, NewC is C-1.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%% FACTS %%%%%%%%%%%%%%%%%%55%%%%
 
- close_direction(north, northwest).
- close_direction(northwest, west).
- close_direction(west, southwest).
- close_direction(soutwest, south).
- close_direction(south, southeast).
- close_direction(southeast, east).
- close_direction(east, northeast). 
- close_direction(northeast, north).
+% OPPOSITE DIRECTIONS
+
+opposite(north, south).
+opposite(south, north).
+opposite(east, west).
+opposite(west, east).
+opposite(northeast, southwest).
+opposite(southwest, northeast).
+opposite(northwest, southeast).
+opposite(southeast, northwest).
+
  
+% CLOCKWISE CLOSE DIRECTIONS
+
+clock_close_direction(north, northeast).
+clock_close_direction(northeast, east).
+clock_close_direction(east, southeast).
+clock_close_direction(southeast, south).
+clock_close_direction(south, southwest).
+clock_close_direction(southwest, west).
+clock_close_direction(west, northwest).
+clock_close_direction(northwest, north).
+
+% COUNTER-CLOCKWISE CLOSE DIRECTIONS
+
+c_clock_close_direction(north, northwest).
+c_clock_close_direction(northwest, west).
+c_clock_close_direction(west, southwest).
+c_clock_close_direction(soutwest, south).
+c_clock_close_direction(south, southeast).
+c_clock_close_direction(southeast, east).
+c_clock_close_direction(east, northeast). 
+c_clock_close_direction(northeast, north).
 
 
-% close_direction(north, northeast).
-% close_direction(northeast, east).
-% close_direction(east, southeast).
-% close_direction(southeast, south).
-% close_direction(south, southwest).
-% close_direction(southwest, west).
-% close_direction(west, northwest).
-% close_direction(northwest, north).
-
-% close_direction(D,D2) :- close_direction(D2,D).
-
-% previous_agent_position(_,_) :- fail.
 safe_position(R,C) :- \+ unsafe_position(R,C).
