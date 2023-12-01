@@ -31,38 +31,56 @@ def perform_action(action, env):
 
 def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
     kb.retractall("position(_,_,_)")
-
+    asserts = []
     for i in range(21):
         for j in range(79):
             if not (obs['screen_descriptions'][i][j] == 0).all():
                 obj = bytes(obs['screen_descriptions'][i][j]).decode('utf-8').rstrip('\x00')
                 if 'tree' in obj:
                     kb.asserta(f'position(tree, {i}, {j})')
+                    asserts.append(f'position(tree, {i}, {j}).')
                 elif 'cloud' in obj:
                     kb.asserta(f'position(cloud, {i}, {j})')
+                    asserts.append(f'position(cloud, {i}, {j}).')
+
                 elif 'floor' in obj:
                     kb.asserta(f'position(floor, {i}, {j})')
+                    asserts.append(f'position(floor, {i}, {j}).')
+
                 elif 'down' in obj:
                     kb.asserta(f'position(down_stairs, {i}, {j})')
+                    asserts.append(f'position(down_stairs, {i}, {j}).')
+
                 elif 'dark' in obj:
                     kb.asserta(f'position(dark, {i}, {j})')
+                    asserts.append(f'position(dark, {i}, {j}).')
+
                 elif 'human' in obj:
                     kb.asserta(f'position(agent, {i}, {j})') #maybe use info from obs?
+                    asserts.append(f'position(agent, {i}, {j}).')
+
                 elif 'up' in obj:
                     kb.asserta(f'position(up_stairs, {i}, {j})')
+                    asserts.append(f'position(up_stairs, {i}, {j}).')
+
                 elif 'boulder' in obj:
                     kb.asserta(f'position(boulder, {i}, {j})')
-                    
+                    asserts.append(f'position(boulder, {i}, {j}).')
+
                 is_there_monster = [value for value in monsters if value in obj]
                 if (is_there_monster):
-                    kb.asserta(f'position(enemy, {i}, {j})')  
+                    kb.asserta(f'position(enemy, {i}, {j})')
+                    asserts.append(f'position(enemy, {i}, {j}).')
+
                 try:    
                     enemies_list = list(kb.query('position(enemy,_,_)'))[0]
                 except Exception as e:
                     enemies_list = None
                 if enemies_list is not None and len(enemies_list) != 0:
                     print(f'ENEMIES: {enemies_list}')
-   
+
+    return asserts
+    
     kb.retractall("position(agent,_,_,_)")
     kb.asserta(f"position(agent, _, {obs['blstats'][1]}, {obs['blstats'][0]})")
 
