@@ -25,99 +25,35 @@ class _Moves(Enum):
 
 
 def get_player_location(game_map: np.ndarray, symbol : str = _Characters.PLAYER.value) -> Tuple[int, int]:
-    """
-    Returns the location of the player on the game map.
-
-    Parameters:
-    - game_map (np.ndarray): The game map represented as a numpy array.
-    - symbol (str): The symbol representing the player on the game map. Default is '@'.
-
-    Returns:
-    - Tuple[int, int]: The coordinates (row, column) of the player's location.
-    """
     x, y = np.where(game_map == ord(symbol))
     return (x[0], y[0])
     
 def get_target_location(game_map: np.ndarray, symbol : str = _Characters.STAIRS.value) -> Tuple[int, int]:
-    """
-    Returns the location of the target (stairs) on the game map.
-
-    Parameters:
-    - game_map (np.ndarray): The game map represented as a numpy array.
-    - symbol (str): The symbol representing the target on the game map. Default is '>'.
-
-    Returns:
-    - Tuple[int, int]: The coordinates (row, column) of the target's location.
-    """
     x, y = np.where(game_map == ord(symbol))
     return (x[0], y[0])
 
 def get_monster_location(game_map: np.ndarray):
-    """
-    Returns the location of the first monster found on the game map.
-
-    Parameters:
-    - game_map (np.ndarray): The game map represented as a numpy array.
-
-    Returns:
-    - Tuple[int, int] or None: The coordinates (row, column) of the monster's location if found, None otherwise.
-    """
     for monster in _Characters.MONSTERS.value:
         locations = np.where(game_map == ord(monster))
         if locations[0].size > 0:  # If a monster is found, return its position
             return locations[0][0], locations[1][0]
     return None  # Otherwise return None
 
+def get_clouds_location(game_map: np.ndarray, color_map: np.ndarray) -> List[Tuple[int, int]]:
+    locations = np.where(np.logical_and(game_map == ord(_Characters.HASHTAG.value), color_map != _Colors.GREEN.value))
+    if locations[0].size > 0:
+        return list(zip(locations[0], locations[1]))
+
 def is_wall(position_element: int) -> bool:
-    """
-    Checks if the given position element represents a wall.
-
-    Parameters:
-    - position_element (int): The element at the given position on the game map.
-
-    Returns:
-    - bool: True if the position element represents a wall, False otherwise.
-    """
     return chr(position_element) in _Characters.OBSTACLES.value
 
 def is_tree(position_element: int, color_element: int) -> bool:
-    """
-    Checks if the given position element represents a tree.
-
-    Parameters:
-    - position_element (int): The element at the given position on the game map.
-    - color_element (int): The color element at the given position on the game map.
-
-    Returns:
-    - bool: True if the position element represents a tree, False otherwise.
-    """
     return position_element == ord(_Characters.HASHTAG.value) and color_element == _Colors.GREEN.value
 
 def is_cloud(position_element: int, color_element: int) -> bool:
-    """
-    Checks if the given position element represents a cloud.
-
-    Parameters:
-    - position_element (int): The element at the given position on the game map.
-    - color_element (int): The color element at the given position on the game map.
-
-    Returns:
-    - bool: True if the position element represents a cloud, False otherwise.
-    """
     return position_element == ord(_Characters.HASHTAG.value) and color_element != _Colors.GREEN.value
 
 def get_valid_moves(game_map: np.ndarray, colors: np.ndarray, current_position: Tuple[int, int]) -> List[Tuple[int, int]]:
-    """
-    Returns a list of valid moves from the current position on the game map.
-
-    Parameters:
-    - game_map (np.ndarray): The game map represented as a numpy array.
-    - colors (np.ndarray): The color map represented as a numpy array.
-    - current_position (Tuple[int, int]): The current position on the game map.
-
-    Returns:
-    - List[Tuple[int, int]]: A list of valid moves as coordinates (row, column).
-    """
     x_limit, y_limit = game_map.shape
     valid = []
     x, y = current_position    
@@ -150,16 +86,6 @@ def get_valid_moves(game_map: np.ndarray, colors: np.ndarray, current_position: 
 
 
 def actions_from_path(start: Tuple[int, int], path: List[Tuple[int, int]]) -> List[int]:
-    """
-    Returns a list of actions (moves) to follow the given path from the start position.
-
-    Parameters:
-    - start (Tuple[int, int]): The start position on the game map.
-    - path (List[Tuple[int, int]]): The path to follow as a list of coordinates (row, column).
-
-    Returns:
-    - List[int]: A list of actions (moves) represented as integers.
-    """
     actions = []
     col_s, row_s = start
     for (col, row) in path:

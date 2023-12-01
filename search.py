@@ -1,57 +1,23 @@
 import math
-import time
 from queue import PriorityQueue
 from typing import Dict, List, Tuple
 import numpy as np
-from map_utils import get_monster_location, get_valid_moves, is_cloud, actions_from_path
-import IPython.display as display
-import matplotlib.pyplot as plt
+from map_utils import get_monster_location, get_valid_moves, is_cloud, actions_from_path, get_clouds_location
 
-
-MIN_COST = 1
+MIN_COST = 10**-5
 MAX_COST = 10**5
 
 def chebyshev_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> int:
-    """
-    Calculates the Chebyshev distance between two points in a grid.
-
-    Args:
-        point1 (Tuple[int, int]): The coordinates of the first point.
-        point2 (Tuple[int, int]): The coordinates of the second point.
-
-    Returns:
-        int: The Chebyshev distance between the two points.
-    """
     x1, y1 = point1
     x2, y2 = point2
     return max(abs(x1 - x2), abs(y1 - y2))
 
 def euclidean_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> float:
-    """
-    Calculates the Euclidean distance between two points in a grid.
-
-    Args:
-        point1 (Tuple[int, int]): The coordinates of the first point.
-        point2 (Tuple[int, int]): The coordinates of the second point.
-
-    Returns:
-        float: The Euclidean distance between the two points.
-    """
     x1, y1 = point1
     x2, y2 = point2
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 def _euclidean_distance_prime(point1: Tuple[int, int], point2: Tuple[int, int]) -> Tuple[float, float]:
-    """
-    Calculates the derivative of the Euclidean distance between two points in a grid.
-
-    Args:
-        point1 (Tuple[int, int]): The coordinates of the first point.
-        point2 (Tuple[int, int]): The coordinates of the second point.
-
-    Returns:
-        Tuple[float, float]: The partial derivatives of the Euclidean distance with respect to x and y.
-    """
     x1, y1 = point1
     x2, y2 = point2
     distance = (x1 - x2)**2 + (y1 - y2)**2
@@ -61,41 +27,35 @@ def _euclidean_distance_prime(point1: Tuple[int, int], point2: Tuple[int, int]) 
     dy = (y1 - y2) / distance
     return dx, dy
 
-def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_char: int, monster_position: Tuple[int, int] = None) -> int:
-    """
-    Computes the cost of moving from one position to another in the game map.
+def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np.ndarray, precision: str) -> int:
+    monster_position = get_monster_location(game_map)
 
-    Args:
-        game_map (np.ndarray): The game map.
-        position (Tuple[int, int]): The current position.
-        color_char (int): The color character at the current position.
-        monster_position (Tuple[int, int], optional): The position of the monster. Defaults to None.
-
-    Returns:
-        int: The cost of moving from the current position to the new position.
-    """
-    if monster_position is None:
-        if is_cloud(game_map[position], color_char):
+    # if monster is in known position then we exploit clouds to avoid it
+    if monster_position is not None:
+        if is_cloud(game_map[position], color_map[position]):
+            return MIN_COST
+        else:
+            return np.reciprocal(chebyshev_distance(position, monster_position))    
+    
+    # updating at each step
+    if precision == 'fully_dynamic':
+        cost = 0
+        clouds = get_clouds_location(game_map, color_map)
+        avoid_positions = list(set(clouds.append(monster_position) if monster_position is not None else clouds)) # merge the two lists
+        # insted, if monster is in unkown position then we sum the "danger" of each cloud hiding a monster
+        for avoid_position in avoid_positions:
+            distance = chebyshev_distance(position, avoid_position)
+            if distance == 0:                   # position is either a cloud or a monster
+                return MAX_COST                 # maximum danger
+            cost += np.reciprocal(distance)
+        return cost
+    # updating each type the monster comes clear
+    elif precision == 'monster_dynamic':
+        if is_cloud(game_map[position], color_map[position]):
             return MAX_COST
         return MIN_COST
-    
-    # monster is in known position
-    if is_cloud(game_map[position], color_char):
-        return MIN_COST
-    edge_weight = np.sum(np.ceil(_euclidean_distance_prime(position, monster_position)))
-    return edge_weight
 
 def _build_path(parent: dict, target: Tuple[int, int]) -> List[Tuple[int, int]]:
-    """
-    Builds the path from the start position to the target position.
-
-    Args:
-        parent (dict): A dictionary that stores the parent nodes.
-        target (Tuple[int, int]): The target position.
-
-    Returns:
-        List[Tuple[int, int]]: The path from the start position to the target position.
-    """
     path = []
     while target is not None:
         path.append(target)
@@ -103,20 +63,7 @@ def _build_path(parent: dict, target: Tuple[int, int]) -> List[Tuple[int, int]]:
     path.reverse()
     return path
 
-def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], h: callable) -> List[Tuple[int, int]]:
-    """
-    Finds the shortest path from the start position to the target position using the A* algorithm.
-
-    Args:
-        game_map (np.ndarray): The game map.
-        color_map (np.ndarray): The color map.
-        start (Tuple[int, int]): The start position.
-        target (Tuple[int, int]): The target position.
-        h (callable): The heuristic function.
-
-    Returns:
-        List[Tuple[int, int]]: The shortest path from the start position to the target position.
-    """
+def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], h: callable, precision: str) -> List[Tuple[int, int]]:
     frontier = PriorityQueue()                                      #init frontier as PriorityQueue
     frontier.put(start, 0)                                          #init frontier with starting node
     came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}          #empty dict to store parent nodes
@@ -131,8 +78,9 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
             return _build_path(came_from, target)
         
         for neighbor in get_valid_moves(game_map, color_map, current):
-            new_cost = cost_so_far[current] + _compute_cost(game_map, neighbor, color_map[neighbor], get_monster_location(game_map))
-            
+            # new_cost = cost_so_far[current] + _compute_cost(game_map, neighbor, color_map[neighbor], get_monster_location(game_map))
+            new_cost = cost_so_far[current] + _compute_cost(game_map, neighbor, color_map, precision)
+
             # if neighbor has not been already visited or has been visited but with a higher cost then update cost and add to frontier
             if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
                 cost_so_far[neighbor] = new_cost            #update cost
@@ -142,56 +90,12 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
 
     return None
 
-def dynamic_pathfinding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], heuristic: callable):
-    """
-    Finds the dynamic path from the start position to the target position considering the moving monster.
-
-    Args:
-        game_map (np.ndarray): The game map.
-        color_map (np.ndarray): The color map.
-        start (Tuple[int, int]): The start position.
-        target (Tuple[int, int]): The target position.
-        heuristic (callable): The heuristic function.
-
-    Returns:
-        List: The list of actions to reach the target position.
-    """
-    path = a_star(game_map, color_map, start, target, heuristic)
+def dynamic_pathfinding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], heuristic: callable, precision: str = 'fully_dynamic'):
+    path = a_star(game_map, color_map, start, target, heuristic, precision)
     actions = actions_from_path(start, path[1:])
     for index, _ in enumerate(actions):
-        if get_monster_location(game_map) is not None:
-            new_path = a_star(game_map, color_map, path[index+1], target, heuristic)
+        if get_monster_location(game_map) is not None or precision == 'fully_dynamic':
+            new_path = a_star(game_map, color_map, path[index+1], target, heuristic, precision)
             del actions[index+1:]
             actions.extend(actions_from_path(path[index+1], new_path[1:]))
     return actions
-
-def render_actions(actions: List, env, game: np.ndarray):
-    """
-    Renders the actions in the game environment.
-
-    Args:
-        actions (List): The list of actions.
-        env: The game environment.
-        game (np.ndarray): The game map.
-
-    Returns:
-        None
-    """
-    image = plt.imshow(game[100:270, 500:760])
-    for action in actions:
-        s, _, done, info = env.step(action)
-        time.sleep(0.5)
-        display.display(plt.gcf())
-        display.clear_output(wait=True)
-        image.set_data(s['pixel'][100:270, 500:760])
-        # Check if the game has ended
-        if done:
-            end_status = info.get('end_status')
-            if end_status == 2: 
-                print("The agent successfully completed the task!")
-                break
-            elif end_status == 1:
-                print("The agent died.")
-                break
-            else:
-                print("The game ended for other reasons.")
