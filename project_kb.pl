@@ -1,15 +1,18 @@
 :- dynamic position/3.
 :- dynamic unsafe_position/2.
 
-action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
-                                   is_close(AgentR, AgentC, EnemyR, EnemyC),
-                                   resulting_direction(AgentR, AgentC, EnemyR, EnemyC, Direction),
-                                   opposite(Direction, OD), safe_direction(AgentR, AgentC, OD, OppositeDirection).
+% action(run(OppositeDirection)) :- position(agent, AgentR, AgentC), position(enemy, EnemyR, EnemyC),
+ %                                  is_close(AgentR, AgentC, EnemyR, EnemyC),
+ %                                  resulting_direction(AgentR, AgentC, EnemyR, EnemyC, Direction),
+  %                                 opposite(Direction, OD), 
+   %                                IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT).
 
 
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
+
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
-                           resulting_direction(AgentR, AgentC, StairsR, StairsC, D), safe_direction(AgentR, AgentC, D, Direction).
+                           resulting_direction(AgentR, AgentC, StairsR, StairsC, D), 
+                           IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT).
 
 % TODO: WHEN STAIR POISITON IS NOT KNOWN, WE JUST EXPLORE
 
@@ -33,12 +36,19 @@ resulting_direction(R1,C1,R2,C2, D) :-
 % CHECK IF THE DIRECTION LEADS TO A SAFE POSITION
 % D = TEMPORARY DIRECTION - MAY BE UNSAFE
 % Direction = THE DEFINITIVE DIRECTION
+% IT = INTEGER ITERATING VALUE, TO ALTERNATINGLY CHECK FOR CLOCKWISE AND COUNTER-CLOCKWISE CLOSE DIRECTIONS
 
-safe_direction(R, C, D, Direction) :- resulting_position(R, C, NewR, NewC, D),
+safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C, NewR, NewC, D),
                                       ( safe_position(NewR, NewC) -> Direction = D;
                                       % else, get a new close direction
                                       % and check its safety
-                                      clock_close_direction(D, ND), safe_direction(R, C, ND, Direction), safe_position(R, C)
+                                      
+                                       (0 is (IT mod 2)) ->
+                                       (ITN is (IT + 1), clock_close_direction(CL_D, CL_ND), 
+                                       safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN));
+                                       
+                                      (ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND), 
+                                       safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN))
                                       ).
 
 
