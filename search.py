@@ -35,19 +35,22 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
         if is_cloud(game_map[position], color_map[position]):
             return MIN_COST
         else:
-            return np.reciprocal(chebyshev_distance(position, monster_position))    
+            monster_distance = chebyshev_distance(position, monster_position)
+            if monster_distance == 0:
+                return MAX_COST
+            else:
+                return np.reciprocal(float(monster_distance))
     
     # updating at each step
     if precision == 'fully_dynamic':
-        cost = 0
+        cost = 0.0
         clouds = get_clouds_location(game_map, color_map)
-        avoid_positions = list(set(clouds.append(monster_position) if monster_position is not None else clouds)) # merge the two lists
         # insted, if monster is in unkown position then we sum the "danger" of each cloud hiding a monster
-        for avoid_position in avoid_positions:
+        for avoid_position in clouds:
             distance = chebyshev_distance(position, avoid_position)
             if distance == 0:                   # position is either a cloud or a monster
                 return MAX_COST                 # maximum danger
-            cost += np.reciprocal(distance)
+            cost += np.reciprocal(float(distance))
         return cost
     # updating each type the monster comes clear
     elif precision == 'monster_dynamic':
