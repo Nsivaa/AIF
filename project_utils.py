@@ -80,9 +80,6 @@ def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
                     print(f'ENEMIES: {enemies_list}')
 
     return asserts
-    
-    kb.retractall("position(agent,_,_,_)")
-    kb.asserta(f"position(agent, _, {obs['blstats'][1]}, {obs['blstats'][0]})")
 
 
 # indexes for showing the image are hard-coded
