@@ -1,9 +1,0 @@
-position(floor, 13, 65).
-position(floor, 13, 66).
-position(floor, 13, 67).
-position(floor, 14, 65).
-position(agent, 14, 66).
-position(floor, 14, 67).
-position(floor, 15, 65).
-position(enemy, 15, 66).
-position(floor, 15, 67).

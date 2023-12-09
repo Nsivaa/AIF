@@ -1,3 +1,0 @@
-position(floor, 9, 53).
-position(agent, 9, 54).
-position(floor, 10, 54).

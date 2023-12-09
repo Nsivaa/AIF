@@ -1,8 +1,0 @@
-position(floor, 14, 68).
-position(floor, 14, 70).
-position(floor, 15, 68).
-position(agent, 15, 69).
-position(floor, 15, 70).
-position(floor, 16, 68).
-position(floor, 16, 69).
-position(floor, 16, 70).

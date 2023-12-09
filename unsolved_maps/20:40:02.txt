@@ -1,9 +1,0 @@
-position(floor, 3, 21).
-position(floor, 3, 22).
-position(floor, 3, 23).
-position(floor, 4, 21).
-position(agent, 4, 22).
-position(floor, 4, 23).
-position(floor, 5, 21).
-position(floor, 5, 22).
-position(floor, 5, 23).
