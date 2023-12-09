@@ -31,6 +31,7 @@ def perform_action(action, env):
 
 def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
     kb.retractall("position(_,_,_)")
+    kb.retractall("shifting(_,_,_)")
     asserts = []
     for i in range(21):
         for j in range(79):
@@ -76,8 +77,6 @@ def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
                     enemies_list = list(kb.query('position(enemy,_,_)'))[0]
                 except Exception as e:
                     enemies_list = None
-                if enemies_list is not None and len(enemies_list) != 0:
-                    print(f'ENEMIES: {enemies_list}')
 
     return asserts
 
