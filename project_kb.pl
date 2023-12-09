@@ -150,10 +150,10 @@ unwalkable_position(R,C) :- \+ position(_,R,C).
 
 % we avoid the perpendicular and diagonal positions to the enemy to make ranged attacks less likely to hit, if the enemy is not close to us (enemy will not use range attacks) and there is no tree in between
 
-unsafe_position(R, C) :- position(enemy, R, EC), \+ is_close(R, C, R, EC), \+ (position(tree, R, TC), abs(TC - EC) < abs(EC - C)). % ROW CHECK
-unsafe_position(R, C) :- position(enemy, ER, C), \+ is_close(R, C, ER, C), \+ (position(tree, TR ,C), abs(TR - ER) < abs(ER - R)). % COLUMN CHECK
+unsafe_position(R, C) :- position(enemy, R, EC), position(agent, R, AC), \+ is_close(R, AC, R, EC), \+ (position(tree, R, TC), abs(TC - EC) < abs(EC - C)). % ROW CHECK
+unsafe_position(R, C) :- position(enemy, ER, C), position(agent, AR, C), \+ is_close(AR, C, ER, C), \+ (position(tree, TR ,C), abs(TR - ER) < abs(ER - R)). % COLUMN CHECK
 
-unsafe_position(R,C) :- position(enemy, ER, EC), are_on_same_diagonal(R ,C , ER, EC), \+ is_close(R, C, ER, EC),
+unsafe_position(R,C) :- position(enemy, ER, EC), are_on_same_diagonal(R ,C , ER, EC), position(agent, AR, AC), \+ is_close(AR, AC, ER, EC),
                         \+ ( position(tree, TR ,TC), ( (abs(TR - ER) + abs(TC - EC)) < (abs(ER - R) + abs(EC + C)) ) ). 
 
 unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
