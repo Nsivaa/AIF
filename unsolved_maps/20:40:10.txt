@@ -1,0 +1,6 @@
+position(floor, 8, 31).
+position(agent, 8, 32).
+position(floor, 8, 33).
+position(floor, 9, 31).
+position(floor, 9, 32).
+position(enemy, 9, 33).

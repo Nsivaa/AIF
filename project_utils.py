@@ -80,15 +80,19 @@ def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
 
     return asserts
 
+# DES_COORDS = [111:250, 320:495], NON-DES COORDS = [115:275, 480:750]
 
 # indexes for showing the image are hard-coded
+#if we are using a .des file instead of hidenseek, coordinates change
 def show_match(states: list):
-    image = plt.imshow(states[0][115:275, 480:750])
-    for state in states[1:]:
-        time.sleep(0.75)
+        image = plt.imshow(states[0][90:270, 300:510])
+        for state in states[1:]:
+            time.sleep(0.75)
+            display.display(plt.gcf())
+            display.clear_output(wait=True)
+            image.set_data(state[90:270, 300:510])
+        time.sleep(0.25)
         display.display(plt.gcf())
         display.clear_output(wait=True)
-        image.set_data(state[115:275, 480:750])
-    time.sleep(0.25)
-    display.display(plt.gcf())
-    display.clear_output(wait=True)
+   
+    

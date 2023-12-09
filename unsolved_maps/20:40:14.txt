@@ -1,0 +1,6 @@
+position(floor, 3, 47).
+position(floor, 3, 48).
+position(agent, 4, 47).
+position(floor, 4, 48).
+position(floor, 5, 47).
+position(floor, 5, 48).

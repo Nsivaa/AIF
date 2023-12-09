@@ -1,0 +1,4 @@
+position(floor, 4, 2).
+position(floor, 5, 2).
+position(agent, 5, 3).
+position(floor, 5, 4).

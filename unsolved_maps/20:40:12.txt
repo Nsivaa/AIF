@@ -1,0 +1,2 @@
+position(floor, 3, 57).
+position(agent, 3, 58).
