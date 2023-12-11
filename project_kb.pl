@@ -163,7 +163,7 @@ resulting_position(R, C, NewR, NewC, southwest) :-
     NewR is R+ 1, NewC is C- 1.
 
 
-%%%%%%%%%%%%%%%%%%%%%%%% FACTS %%%%%%%%%%%%%%%%%%55%%%%
+%%%%%%%%%%%%%%%%%%%%%%%% FACTS %%%%%%%%%%%%%%%%%%%%%%%%
 
 % OPPOSITE DIRECTIONS
 
@@ -202,103 +202,3 @@ c_clock_close_direction(northeast, north).
 
 safe_position(R,C) :- \+ unsafe_position(R,C).
 walkable_position(R,C) :- \+ unwalkable_position(R,C).
-
-position(floor, 7, 18).
-position(floor, 7, 19).
-position(floor, 7, 20).
-position(floor, 7, 21).
-position(floor, 7, 22).
-position(tree, 7, 23).
-position(floor, 7, 24).
-position(floor, 7, 25).
-position(floor, 7, 26).
-position(floor, 7, 27).
-position(floor, 7, 28).
-position(floor, 8, 18).
-position(floor, 8, 19).
-position(floor, 8, 20).
-position(floor, 8, 21).
-position(cloud, 8, 22).
-position(floor, 8, 23).
-position(floor, 8, 24).
-position(floor, 8, 25).
-position(cloud, 8, 26).
-position(floor, 8, 27).
-position(cloud, 8, 28).
-position(floor, 9, 18).
-position(floor, 9, 19).
-position(floor, 9, 20).
-position(cloud, 9, 21).
-position(cloud, 9, 22).
-position(cloud, 9, 23).
-position(cloud, 9, 24).
-position(floor, 9, 25).
-position(floor, 9, 26).
-position(floor, 9, 27).
-position(floor, 9, 28).
-position(floor, 10, 18).
-position(floor, 10, 19).
-position(floor, 10, 20).
-position(floor, 10, 21).
-position(cloud, 10, 22).
-position(floor, 10, 23).
-position(tree, 10, 24).
-position(floor, 10, 25).
-position(tree, 10, 26).
-position(floor, 10, 27).
-position(tree, 10, 28).
-position(floor, 11, 18).
-position(floor, 11, 19).
-position(floor, 11, 20).
-position(floor, 11, 21).
-position(cloud, 11, 22).
-position(floor, 11, 23).
-position(floor, 11, 24).
-position(floor, 11, 25).
-position(floor, 11, 26).
-position(floor, 11, 27).
-position(floor, 11, 28).
-position(tree, 12, 18).
-position(cloud, 12, 19).
-position(floor, 12, 20).
-position(enemy, 12, 21).
-position(floor, 12, 22).
-position(floor, 12, 23).
-position(cloud, 12, 24).
-position(floor, 12, 25).
-position(floor, 12, 26).
-position(cloud, 12, 27).
-position(cloud, 12, 28).
-position(floor, 13, 18).
-position(tree, 13, 19).
-position(floor, 13, 20).
-position(floor, 13, 21).
-position(floor, 13, 22).
-position(floor, 13, 23).
-position(floor, 13, 24).
-position(floor, 13, 25).
-position(floor, 13, 26).
-position(cloud, 13, 27).
-position(floor, 13, 28).
-position(floor, 14, 18).
-position(agent, 14, 19).
-position(floor, 14, 20).
-position(floor, 14, 21).
-position(floor, 14, 22).
-position(cloud, 14, 23).
-position(floor, 14, 24).
-position(floor, 14, 25).
-position(floor, 14, 26).
-position(floor, 14, 27).
-position(cloud, 14, 28).
-position(floor, 15, 18).
-position(tree, 15, 19).
-position(floor, 15, 20).
-position(floor, 15, 21).
-position(floor, 15, 22).
-position(floor, 15, 23).
-position(floor, 15, 24).
-position(floor, 15, 25).
-position(tree, 15, 26).
-position(cloud, 15, 27).
-position(floor, 15, 28).
