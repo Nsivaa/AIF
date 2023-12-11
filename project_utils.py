@@ -15,7 +15,7 @@ def define_reward():
     return reward_manager
 
 def perform_action(action, env):
-
+    
     if 'northeast' in action: action_id = 4
     elif 'southeast' in action: action_id = 5
     elif 'southwest' in action: action_id = 6
@@ -24,14 +24,12 @@ def perform_action(action, env):
     elif 'east' in action: action_id = 1
     elif 'south' in action: action_id = 2
     elif 'west' in action: action_id = 3
-
     # print(f'Action performed: {repr(env.actions[action_id])}')
     obs, reward, done, info = env.step(action_id)
     return obs, reward, done, info
 
 def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
     kb.retractall("position(_,_,_)")
-    kb.retractall("shifting(_,_,_)")
     asserts = []
     for i in range(21):
         for j in range(79):
