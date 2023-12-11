@@ -1,50 +1,47 @@
 :- dynamic(position/3).
 :- dynamic(unsafe_position/2).
 :- dynamic(unwalkable_position/2).
-:- dynamic(shifting/3).
+:- dynamic(already_walked/2).
+:- dynamic(lastKnownEnemyPosition/2).
 
-% dark part of a room
- % floor of a room
- % fog/vapor cloud
- % tree
- % staircase down
-   % floor of a room
-   % fog/vapor cloud
-   % floor of a room
-   % human rogue called Agent
-% se il mostro è visibile:
- %	-ti trovi tra il goal e il mostro(o il mostro sta nella tua stessa riga/colonna ma è più lontano dal goal) -> minpath(nuvole OK) verso il goal
- %	-il mostro si trova tra il goal e te (o è nella stessa riga/colonna del goal):
- %		-ti trovi lontano dal mostro/goal, fai un passo per avvicinarti al goal e ripeti sopra
- %		-ti trovi a <=2 mosse di distanza dal mostro:
- %			-muovi in una cella sicura che ti avvicini al traguardo (se ci sono)
- %			-altrimenti che non ti allontani, altrimenti che ti allontani
- % se non è visibile -> minpath sicuro(no nuvole) se esite, altrimenti con nuvole
- % per allontanarsi di meno dal goal, se è possibile allontanarsi solo di una riga o una colonna piuttosto che di entrambe
- % se il mostro dopo esser stato avvistato scompare si considera come se fosse dov'era prima
- %-se il mostro dopo esser stato avvistato è scomparso, se la distanza dal traguardo non cambia, meglio scegliere il percorso che maggiora la distanza dall'ultima posizione conosciuta del mostro.
- %-optional: implementare un bayesian network per stimare le probabilità che le celle hanno di essere in target del mostro dopo x turni dalla sua scomparsa, partendo dalla sua posizione e scegliere quella con probabilità minore come safe, piuttosto che quella più "lontana"
- %
- %non hai safe move perchè il mostro è vicino?
- %non si vede il goal?
- %	ce sopra il mostro-> allontanati dal mostro per farlo spostare
- %	è in una cella buia -> segna nella KB le coordinate delle celle buie e delle celle illuminate,
- %	controlla per ogni cella buia avvicinandoti se siano li le scale, man mano che ti avvicini se celle si illuminanp aggiungi all KB delle celle      illuminate quelle che prima erano buie, se una cella da illumana passa a buia è cmq già "esplorata"
- %	una volta trovate le scale, si switcha al problema originale
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
-% TODO: KB must by emptied of all shifting added when the monster is found or it started a new episode
+% TODO: togliere la roba quando sei vicino alla scala
+% TODO: KB must by emptied of all already_walked/2 and lastKnownEnemyPosition/2 added when it starts a new episode
 % azione dell agente quando si vedono le scale ma non il mostro
-
 % if stairs are at 1 distance, go for it and ignore every safety check
-
+%In otder to get a direction of movement the preference hierarchy for direction is : safe_position>unsafe_position>already_walked>unwalkable_position
+%unsafe_position>already_walked beacuse already walked position can lead to loops which is worse than walking in risky positions.
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC), is_close(AgentR, AgentC, StairsR, StairsC),
-                           resulting_direction(AgentR, AgentC, StairsR, StairsC, Direction).
-
+                           resulting_direction(AgentR, AgentC, StairsR, StairsC, Direction),(already_walked(AgentR,AgentC)->true;asserta(already_walked(AgentR,AgentC))).
 
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
-                           resulting_direction(AgentR, AgentC, StairsR, StairsC, D), 
+                           resulting_direction(AgentR, AgentC, StairsR, StairsC, D), setEnemyCloudPositions(AgentR, AgentC),
+                           IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT),(already_walked(AgentR,AgentC)->true;asserta(already_walked(AgentR,AgentC))).
+
+%if there is no stairs but the monster is visible we to a safe_position toward the monster cell until the monster moves out of the stairs.
+action(move(Direction)) :- position(agent, AgentR, AgentC),\+position(down_stairs, _,_), position(enemy,TargetR,TargetC),
+                           resulting_direction(AgentR, AgentC, TargetR,TargetC, D), setEnemyCloudPositions(AgentR, AgentC),
                            IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT).
 
+
+%the function set the last known enemy position if it is visible, if there is no enemy lastKnown position the function does nothing,
+%otherwise the function set the enemy position as if it was in the position of the 3 nearest (to the agent) cells among the ones near
+%last known position and with clouds or dark in them; That are the only 3 ones in which the monster could move (because he target the agent).
+setEnemyCloudPositions(AgentR,AgentC):- (position(enemy,R,C)->
+                            retractall(lastKnownEnemyPosition(_,_)), asserta(lastKnownEnemyPosition(R,C));
+                            (lastKnownEnemyPosition(R,C)->
+                                %if last known enemy position became a dark cell, maybe the monster is still there
+                                (position(dark,R,C)->retractall(position(dark,R,C)), asserta(position(enemy,R,C));true),
+                                resulting_direction(R, C, AgentR, AgentC, D),
+                                checkCloudPosition(R,C,D),
+                                clock_close_direction(D, CC_D),checkCloudPosition(R,C,CC_D),
+                                c_clock_close_direction(D, AC_D),checkCloudPosition(R,C,AC_D);true)).
+
+checkCloudPosition(R,C,D):- resulting_position(R,C,NewR,NewC,D),
+                        (position(cloud,NewR,NewC)->
+                            retractall(position(cloud,NewR,NewC)), asserta(position(enemy,NewR,NewC));
+                            (position(dark,NewR,NewC)->
+                                retractall(position(dark,NewR,NewC)), asserta(position(enemy,NewR,NewC));true)).
 
 % CHECKS IF TWO POSITIONS ARE CLOSE, I.E. IF THEY ARE AT 1 CELL DISTANCE
 
@@ -55,8 +52,6 @@ is_close(R1,C1,R2,C2) :- (R1 is R2+ 1; R1 is R2- 1), (C1 is C2+ 1; C1 is C2- 1).
 % CHECKS IF TWO POINTS ARE ON THE SAME DIAGONAL
 
 are_on_same_diagonal(R ,C ,ER, EC) :- abs(R - ER) =:= abs(C - EC).
-
-% TODO: when the stairs are visible, find a path to them
 
 
 % compute the direction of the target (r2,c2) w.r.t. th agent (r1,c1)
@@ -75,63 +70,49 @@ resulting_direction(R1,C1,R2,C2, D) :-
 % IT = INTEGER ITERATING VALUE, TO ALTERNATINGLY CHECK FOR CLOCKWISE AND COUNTER-CLOCKWISE CLOSE DIRECTIONS
 % the check is made alterning clockwise anti-clockwise because the greater is the angle between the resulting direction and the choosen direction
 %to take a move, the longer the path will be.
-%We must check also if the agent is not already shifted from R,C following direction D (it would be a loop).
-% we are using the fact "shifting" instead of "unsafe_position" to check the already path routed because shifting will remain in the KB until the end of an episode
-% while unsafe position is recalculated before every step.
-
-addShiftingList(R,C,Direction) :- shifting(R,C,List),retract(shifting(R,C,List)),append(List,[Direction],NewList) ,asserta(shifting(R,C,NewList)).
 
 % LOOK FOR A SAFE DIRECTION IN THE CLOSEST 4
 
 safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C, NewR, NewC, D),
                                       (safe_position(NewR, NewC) ->
-                                        (position(enemy,_,_)->
-                                            Direction=D;
-                                          % if the agent hasnt moved there yet from current position
-                                            (\+shifting(R,C,List)->
-                                                Direction = D,asserta(shifting( R,C,[Direction]));
-                                                % else, if the agent has already moved from this position and altready went to D, D will create a loop so its unsafe
-                                                (shifting(R,C,List),member(D,List) ->
-                                                    ((0 is (IT mod 2), 4 >= IT) -> % only considering first 4 closest directions
-                                                       ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
-                                                       safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
-                                                       ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
-                                                       safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));
-                                                    % the agent has already moved from this position but not to the direction D
-                                                    Direction=D, addShiftingList(R,C,Direction))));
+                                        Direction=D;
                                       % else, get a new close direction
                                       % and check its safety
-                                      (0 is (IT mod 2) ->
-                                         ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
-                                         safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
-                                         ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
-                                         safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN))).
+                                        (IT < 5 ->
+                                            (0 is (IT mod 2)->
+                                             ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
+                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
+                                             ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
+                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));false)).
 
 % IF WE HAVENT FOUND A SAFE POSITION IN THE CLOSEST 4, WE PLAY MORE RISKY 
 
 safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C, NewR, NewC, D),
                                       (walkable_position(NewR, NewC) ->
-                                        (position(enemy,_,_)->
-                                            Direction=D;
-                                          % if the agent hasnt moved there yet from current position
-                                            (\+shifting(R,C,List)->
-                                                Direction = D,asserta(shifting( R,C,[Direction]));
-                                                % else, if the agent has already moved from this position and altready went to D, D will create a loop so its unsafe
-                                                (shifting(R,C,List),member(D,List) ->
-                                                    (0 is (IT mod 2) ->
-                                                       ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
-                                                       safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
-                                                       ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
-                                                       safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));
-                                                    %the agent has already moved from this position but not to the direction D
-                                                    Direction=D, addShiftingList(R,C,Direction))));
+                                        Direction=D;
                                       % else, get a new close direction
                                       % and check its safety
-                                      (0 is (IT mod 2) ->
-                                         ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
-                                         safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
-                                         ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
-                                         safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN))).
+                                        (IT < 9 ->
+                                            (0 is (IT mod 2)->
+                                             ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
+                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
+                                             ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
+                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));false)).
+
+% IF WE HAVENT FOUND A WALKABLE POSITION WE TRY THE ALREADY_WALKED POSITIONS
+
+safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C, NewR, NewC, D),
+                                      (already_walked(NewR, NewC) ->
+                                        Direction=D;
+                                      % else, get a new close direction
+                                      % and check its safety
+                                        (IT < 9 ->
+                                            (0 is (IT mod 2)->
+                                             ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
+                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
+                                             ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
+                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));false)).
+
 
 % UNWALKABLE POSITIONS
 
@@ -143,7 +124,7 @@ unwalkable_position(R,C) :- position(tree, R, C).
 %% EVERY UNKNOWN POSITION IS CONSIDERED OUT OF BOUNDS.
 
 unwalkable_position(R,C) :- \+ position(_,R,C).
-
+unwalkable_position(R,C) :- already_walked(R,C).
 
 % UNSAFE POSITIONS
 
@@ -158,7 +139,6 @@ unsafe_position(R,C) :- position(enemy, ER, EC), are_on_same_diagonal(R ,C , ER,
 
 unsafe_position(R,C) :- position(enemy, ER, EC), is_close(ER, EC, R, C).
 
-%todo:aggiungere cloud
 
 unsafe_position(R,C) :- unwalkable_position(R,C).
 unsafe_position(_,_) :- fail.
@@ -213,7 +193,7 @@ clock_close_direction(northwest, north).
 c_clock_close_direction(north, northwest).
 c_clock_close_direction(northwest, west).
 c_clock_close_direction(west, southwest).
-c_clock_close_direction(soutwest, south).
+c_clock_close_direction(southwest, south).
 c_clock_close_direction(south, southeast).
 c_clock_close_direction(southeast, east).
 c_clock_close_direction(east, northeast). 
@@ -223,3 +203,102 @@ c_clock_close_direction(northeast, north).
 safe_position(R,C) :- \+ unsafe_position(R,C).
 walkable_position(R,C) :- \+ unwalkable_position(R,C).
 
+position(floor, 7, 18).
+position(floor, 7, 19).
+position(floor, 7, 20).
+position(floor, 7, 21).
+position(floor, 7, 22).
+position(tree, 7, 23).
+position(floor, 7, 24).
+position(floor, 7, 25).
+position(floor, 7, 26).
+position(floor, 7, 27).
+position(floor, 7, 28).
+position(floor, 8, 18).
+position(floor, 8, 19).
+position(floor, 8, 20).
+position(floor, 8, 21).
+position(cloud, 8, 22).
+position(floor, 8, 23).
+position(floor, 8, 24).
+position(floor, 8, 25).
+position(cloud, 8, 26).
+position(floor, 8, 27).
+position(cloud, 8, 28).
+position(floor, 9, 18).
+position(floor, 9, 19).
+position(floor, 9, 20).
+position(cloud, 9, 21).
+position(cloud, 9, 22).
+position(cloud, 9, 23).
+position(cloud, 9, 24).
+position(floor, 9, 25).
+position(floor, 9, 26).
+position(floor, 9, 27).
+position(floor, 9, 28).
+position(floor, 10, 18).
+position(floor, 10, 19).
+position(floor, 10, 20).
+position(floor, 10, 21).
+position(cloud, 10, 22).
+position(floor, 10, 23).
+position(tree, 10, 24).
+position(floor, 10, 25).
+position(tree, 10, 26).
+position(floor, 10, 27).
+position(tree, 10, 28).
+position(floor, 11, 18).
+position(floor, 11, 19).
+position(floor, 11, 20).
+position(floor, 11, 21).
+position(cloud, 11, 22).
+position(floor, 11, 23).
+position(floor, 11, 24).
+position(floor, 11, 25).
+position(floor, 11, 26).
+position(floor, 11, 27).
+position(floor, 11, 28).
+position(tree, 12, 18).
+position(cloud, 12, 19).
+position(floor, 12, 20).
+position(enemy, 12, 21).
+position(floor, 12, 22).
+position(floor, 12, 23).
+position(cloud, 12, 24).
+position(floor, 12, 25).
+position(floor, 12, 26).
+position(cloud, 12, 27).
+position(cloud, 12, 28).
+position(floor, 13, 18).
+position(tree, 13, 19).
+position(floor, 13, 20).
+position(floor, 13, 21).
+position(floor, 13, 22).
+position(floor, 13, 23).
+position(floor, 13, 24).
+position(floor, 13, 25).
+position(floor, 13, 26).
+position(cloud, 13, 27).
+position(floor, 13, 28).
+position(floor, 14, 18).
+position(agent, 14, 19).
+position(floor, 14, 20).
+position(floor, 14, 21).
+position(floor, 14, 22).
+position(cloud, 14, 23).
+position(floor, 14, 24).
+position(floor, 14, 25).
+position(floor, 14, 26).
+position(floor, 14, 27).
+position(cloud, 14, 28).
+position(floor, 15, 18).
+position(tree, 15, 19).
+position(floor, 15, 20).
+position(floor, 15, 21).
+position(floor, 15, 22).
+position(floor, 15, 23).
+position(floor, 15, 24).
+position(floor, 15, 25).
+position(tree, 15, 26).
+position(cloud, 15, 27).
+position(floor, 15, 28).
