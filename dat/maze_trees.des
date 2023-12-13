@@ -1,0 +1,25 @@
+MAZE: "mylevel", ' '
+FLAGS:hardfloor,premapped
+MESSAGE: "Welcome to MiniHack!"
+INIT_MAP: solidfill,' '
+GEOMETRY:center,center
+MAP
+|||||||||||||||||||
+|.................|
+|..|||||....|..|..|
+|..|   |..|||||||.|
+|..||| |.......|..|
+|....| |||||||.||.|
+|....|       |.|..|
+|....|       |....|
+||||||  ||||||....|
+        |......|..|
+        |......||.|
+        |.........|
+        |||||||||||
+ENDMAP
+REGION:(0,0,11,9),lit,"ordinary"
+REPLACE_TERRAIN:(0,0,11,9), '.', 'T', 25%
+TERRAIN:randline (0,9),(11,0), 5, '.'
+STAIR:(10, 10),down
+BRANCH: (3,6,3,6),(4,7,4,7)
