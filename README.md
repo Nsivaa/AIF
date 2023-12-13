@@ -1,2 +1,26 @@
 # AIF
 Progetto AIF 2023-2024
+
+
+N_EPISODES=500, MAX_STEPS=30
+------------------------RISULTATI SPERIMENTALI------------------------
+KB-MAPPED
+WINRATE_GIANT = 
+WINRATE_RED_NAGA = 
+
+KB
+WINRATE_GIANT = 
+WINRATE_RED_NAGA = 
+
+A*-MAPPED
+WINRATE_GIANT = 
+WINRATE_RED_NAGA = 
+
+A*
+WINRATE_GIANT = 
+WINRATE_RED_NAGA = 
+
+A*+KB-MAPPED
+WINRATE_GIANT = 
+WINRATE_RED_NAGA = 
+---------------------------------------------------------------------
