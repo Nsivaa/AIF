@@ -23,4 +23,8 @@ WINRATE_RED_NAGA =  <br />
 A*+KB-MAPPED <br />
 WINRATE_GIANT =  <br />
 WINRATE_RED_NAGA =  <br />
+
+A*+KB <br />
+WINRATE_GIANT =  <br />
+WINRATE_RED_NAGA =  <br />
 ---------------------------------------------------------------------
