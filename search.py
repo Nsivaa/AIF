@@ -8,7 +8,7 @@ import IPython.display as display
 import matplotlib.pyplot as plt
 from map_utils import get_monster_location, get_monster_type, get_player_location, get_target_location, get_valid_moves, is_cloud, actions_from_path, get_clouds_location
 
-MIN_COST = 10**-5
+MIN_COST = 0
 MAX_COST = 10**5
 
 def chebyshev_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> int:
@@ -26,14 +26,10 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
 
     # if monster is in known position then we exploit clouds to avoid it
     if monster_position is not None:
-        if is_cloud(game_map[position], color_map[position]):
-            return np.reciprocal(chebyshev_distance(position, monster_position))
-        else:
-            monster_distance = chebyshev_distance(position, monster_position)
-            if monster_distance == 0:
-                return MAX_COST
-            else:
-                return np.reciprocal(float(monster_distance))
+        monster_distance = chebyshev_distance(position, monster_position)
+        if monster_distance == 0:
+            return MAX_COST
+        return np.ceil(np.reciprocal(float(monster_distance)))
     
     # updating at each step
     if precision == 'advanced':
@@ -44,7 +40,7 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
             distance = chebyshev_distance(position, avoid_position)
             if distance == 0:                   # position is either a cloud or a monster
                 return MAX_COST                 # maximum danger
-            cost += np.reciprocal(float(distance))
+            cost += np.ceil(np.reciprocal(float(distance)))
         return cost
     # updating each type the monster comes clear
     elif precision == 'base':
