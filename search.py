@@ -26,10 +26,12 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
 
     # if monster is in known position then we exploit clouds to avoid it
     if monster_position is not None:
+        if is_cloud(game_map[position], color_map[position]):
+            return np.reciprocal(np.floor(float(chebyshev_distance(position, monster_position))))   # the floor gives the cloud a better cost (in some cases)
         monster_distance = chebyshev_distance(position, monster_position)
         if monster_distance == 0:
             return MAX_COST
-        return np.ceil(np.reciprocal(float(monster_distance)))
+        return np.reciprocal(float(monster_distance))
     
     # updating at each step
     if precision == 'advanced':
@@ -40,7 +42,7 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
             distance = chebyshev_distance(position, avoid_position)
             if distance == 0:                   # position is either a cloud or a monster
                 return MAX_COST                 # maximum danger
-            cost += np.ceil(np.reciprocal(float(distance)))
+            cost += np.reciprocal(float(distance))
         return cost
     # updating each type the monster comes clear
     elif precision == 'base':
