@@ -1,26 +1,26 @@
 # AIF
-Progetto AIF 2023-2024
+Progetto AIF 2023-2024 <br />
 
 
-N_EPISODES=500, MAX_STEPS=30
-------------------------RISULTATI SPERIMENTALI------------------------
-KB-MAPPED
-WINRATE_GIANT = 
-WINRATE_RED_NAGA = 
+N_EPISODES=500, MAX_STEPS=30 <br />
+------------------------RISULTATI SPERIMENTALI------------------------ <br />
+KB-MAPPED <br />
+WINRATE_GIANT =  <br />
+WINRATE_RED_NAGA =  <br />
 
-KB
-WINRATE_GIANT = 
-WINRATE_RED_NAGA = 
+KB <br />
+WINRATE_GIANT =  <br />
+WINRATE_RED_NAGA =  <br />
 
-A*-MAPPED
-WINRATE_GIANT = 
-WINRATE_RED_NAGA = 
+A*-MAPPED <br />
+WINRATE_GIANT =  <br />
+WINRATE_RED_NAGA =  <br />
 
-A*
-WINRATE_GIANT = 
-WINRATE_RED_NAGA = 
+A* <br />
+WINRATE_GIANT =  <br />
+WINRATE_RED_NAGA =  <br />
 
-A*+KB-MAPPED
-WINRATE_GIANT = 
-WINRATE_RED_NAGA = 
+A*+KB-MAPPED <br />
+WINRATE_GIANT =  <br />
+WINRATE_RED_NAGA =  <br />
 ---------------------------------------------------------------------
