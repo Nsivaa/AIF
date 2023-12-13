@@ -30,6 +30,8 @@ def get_player_location(game_map: np.ndarray, symbol : str = _Characters.PLAYER.
     
 def get_target_location(game_map: np.ndarray, symbol : str = _Characters.STAIRS.value) -> Tuple[int, int]:
     x, y = np.where(game_map == ord(symbol))
+    if x.size == 0 or y.size == 0:
+        return (None, None)
     return (x[0], y[0])
 
 def get_monster_location(game_map: np.ndarray):
@@ -38,6 +40,13 @@ def get_monster_location(game_map: np.ndarray):
         if locations[0].size > 0:  # If a monster is found, return its position
             return locations[0][0], locations[1][0]
     return None  # Otherwise return None
+
+def get_monster_type(game_map: np.ndarray) -> str:
+    for monster in _Characters.MONSTERS.value:
+        locations = np.where(game_map == ord(monster))
+        if locations[0].size > 0:
+            return monster
+    return None
 
 def get_clouds_location(game_map: np.ndarray, color_map: np.ndarray) -> List[Tuple[int, int]]:
     locations = np.where(np.logical_and(game_map == ord(_Characters.HASHTAG.value), color_map != _Colors.GREEN.value))

@@ -1,8 +1,12 @@
 import math
 from queue import PriorityQueue
 from typing import Dict, List, Tuple
+import gym
 import numpy as np
-from map_utils import get_monster_location, get_valid_moves, is_cloud, actions_from_path, get_clouds_location
+import time
+import IPython.display as display
+import matplotlib.pyplot as plt
+from map_utils import get_monster_location, get_monster_type, get_player_location, get_target_location, get_valid_moves, is_cloud, actions_from_path, get_clouds_location
 
 MIN_COST = 10**-5
 MAX_COST = 10**5
@@ -17,23 +21,13 @@ def euclidean_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> floa
     x2, y2 = point2
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
-def _euclidean_distance_prime(point1: Tuple[int, int], point2: Tuple[int, int]) -> Tuple[float, float]:
-    x1, y1 = point1
-    x2, y2 = point2
-    distance = (x1 - x2)**2 + (y1 - y2)**2
-    if distance == 0:
-        return MAX_COST, MAX_COST 
-    dx = (x1 - x2) / distance
-    dy = (y1 - y2) / distance
-    return dx, dy
-
 def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np.ndarray, precision: str) -> int:
     monster_position = get_monster_location(game_map)
 
     # if monster is in known position then we exploit clouds to avoid it
     if monster_position is not None:
         if is_cloud(game_map[position], color_map[position]):
-            return MIN_COST
+            return np.reciprocal(chebyshev_distance(position, monster_position))
         else:
             monster_distance = chebyshev_distance(position, monster_position)
             if monster_distance == 0:
@@ -42,7 +36,7 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
                 return np.reciprocal(float(monster_distance))
     
     # updating at each step
-    if precision == 'fully_dynamic':
+    if precision == 'cloud_dynamic':
         cost = 0.0
         clouds = get_clouds_location(game_map, color_map)
         # insted, if monster is in unkown position then we sum the "danger" of each cloud hiding a monster
@@ -93,12 +87,69 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
 
     return None
 
-def dynamic_pathfinding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], heuristic: callable, precision: str = 'fully_dynamic'):
-    path = a_star(game_map, color_map, start, target, heuristic, precision)
+def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "cloud_dynamic", render : bool = False, graphics = False, pixel_map: np.ndarray = None) -> Tuple[str, str]:
+    done = False
+    monster_type = None
+    monster_loc = None
+    path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
     actions = actions_from_path(start, path[1:])
-    for index, _ in enumerate(actions):
-        if get_monster_location(game_map) is not None or precision == 'fully_dynamic':
-            new_path = a_star(game_map, color_map, path[index+1], target, heuristic, precision)
-            del actions[index+1:]
-            actions.extend(actions_from_path(path[index+1], new_path[1:]))
-    return actions
+
+    if graphics:
+        image = plt.imshow(pixel_map[100:300, 200:500])
+
+    for index, action in enumerate(actions):
+        if get_monster_location(game_map) != monster_loc:   # if monster moved from previous location
+            monster_loc = get_monster_location(game_map)
+            # we get the monster type to derive statistics
+            if monster_type is None:
+                monster_type = get_monster_type(game_map)
+            new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
+            del actions[index:]                                                                     # delete actions from previous path
+            actions.extend(actions_from_path(path[index], new_path[1:]))                            # add new actions to actions list
+            action = actions[index]                                                                 # update action
+            del path[index:]                                                                        # delete path from previous path
+            path.extend(new_path)                                                                   # add new path to path list
+                    
+        s, _, done, info = env.step(action)
+        if render:
+            env.render()
+        
+        if graphics:
+            display.display(plt.gcf())
+            time.sleep(0.5)
+            display.clear_output(wait=True)
+            image.set_data(s['pixel'][100:300, 200:500])
+
+        if done:
+            end_status = info.get('end_status')
+            if end_status == 2:
+                return "W", monster_type
+            if end_status == 1:
+                return "L", monster_type
+            return "O", monster_type
+        
+    return "Not Finished", monster_type 
+
+def evaluate_performance(env: gym.Env, function_to_evaluate: callable, heuristic: callable = chebyshev_distance, evaluation_steps: int = 100) -> Tuple[int, int, List[str], List[str]]:
+    monsters_win = []
+    monsters_loss = []
+    win = 0
+    loss = 0
+    
+    for _ in range(evaluation_steps):
+        state = env.reset()
+        game_map = state["chars"]
+        color_map = state["colors"]
+        start = get_player_location(game_map)
+        target = get_target_location(game_map)
+        if target == (None, None):
+            continue
+        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic)
+        if actions == "W":
+            win += 1
+            monsters_win.append(monster_type)
+        else:
+            loss += 1
+            monsters_loss.append(monster_type)
+
+    return win, loss, monsters_win, monsters_loss
