@@ -85,7 +85,7 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
 
     return None
 
-def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None) -> Tuple[str, str]:
+def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
     done = False
     monster_type = None
     monster_loc = None
@@ -121,12 +121,15 @@ def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tup
         if done:
             end_status = info.get('end_status')
             if end_status == 2:
-                print("The agent successfully completed the task!")
+                if not suppress:
+                    print("The agent successfully completed the task!")
                 return "W", monster_type
             if end_status == 1:
-                print("The agent died.")
+                if not suppress:
+                    print("The agent died.")
                 return "L", monster_type
-            print("The game ended for other reasons.")
+            if not suppress:
+                print("The game ended for other reasons.")
             return "O", monster_type
         
     return "Not Finished", monster_type 
@@ -149,7 +152,7 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
         target = get_target_location(game_map)
         if target == (None, None):
             continue
-        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic)
+        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic, suppress=True)
         if actions == "W":
             win += 1
             monsters_win.append(monster_type)

@@ -21,8 +21,6 @@ REPLACE_TERRAIN:(0,0,11,9), '.', 'C', 33%
 REPLACE_TERRAIN:(0,0,11,9), '.', 'T', 25%
 TERRAIN:randline (0,9),(11,0), 5, '.'
 TERRAIN:randline (0,0),(11,9), 5, '.'
-
 MONSTER: ('H',"giant"),$place[0], hostile
-
 BRANCH:(0,0,0,0),(1,1,1,1)
 STAIR:$place[2],down
