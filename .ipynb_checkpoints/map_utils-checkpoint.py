@@ -12,8 +12,6 @@ class _Characters(Enum):
     OBSTACLES = "|- "
     HASHTAG = "#"
     STAIRS = ">"
-    FLOOR = "."
-    UPSTAIRS = "<"
 
 class _Moves(Enum):
     NORTH = 0
@@ -58,46 +56,11 @@ def get_clouds_location(game_map: np.ndarray, color_map: np.ndarray) -> List[Tup
 def is_wall(position_element: int) -> bool:
     return chr(position_element) in _Characters.OBSTACLES.value
 
-def is_floor(position_element: int) -> bool:
-    return position_element == ord(_Characters.FLOOR.value) 
-
-def is_upstairs(position_element: int) -> bool:
-    return position_element == ord(_Characters.UPSTAIRS.value)
-
 def is_tree(position_element: int, color_element: int) -> bool:
     return position_element == ord(_Characters.HASHTAG.value) and color_element == _Colors.GREEN.value
 
 def is_cloud(position_element: int, color_element: int) -> bool:
     return position_element == ord(_Characters.HASHTAG.value) and color_element != _Colors.GREEN.value
-
-def get_resulting_position(start_x: int, start_y: int, direction: int):
-    
-    if direction == _Moves.NORTH.value:
-        return start_x, start_y + 1
-        
-    if direction == _Moves.EAST.value:
-            return start_x + 1, start_y
-
-    if direction == _Moves.WEST.value:
-            return start_x - 1, start_y
-
-    if direction == _Moves.SOUTH.value:
-            return start_x, start_y - 1
-
-    if direction == _Moves.NORTHWEST.value:
-            return start_x - 1 , start_y + 1
-
-    if direction == _Moves.NORTHEAST.value:
-            return start_x + 1, start_y + 1
-
-    if direction == _Moves.SOUTHWEST.value:
-            return start_x - 1, start_y - 1
-
-    if direction == _Moves.SOUTHEAST.value:
-            return start_x + 1, start_y - 1
-    else:
-        print('Direction invalid')
-        return None
 
 def get_valid_moves(game_map: np.ndarray, colors: np.ndarray, current_position: Tuple[int, int]) -> List[Tuple[int, int]]:
     x_limit, y_limit = game_map.shape

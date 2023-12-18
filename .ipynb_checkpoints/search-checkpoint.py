@@ -6,13 +6,10 @@ import numpy as np
 import time
 import IPython.display as display
 import matplotlib.pyplot as plt
-from project_utils import game_map_to_kb, translate_action
-from map_utils import *
-from pyswip import Prolog
+from map_utils import get_monster_location, get_monster_type, get_player_location, get_target_location, get_valid_moves, is_cloud, actions_from_path, get_clouds_location
 
 MIN_COST = 0
 MAX_COST = 10**5
-KB_PATH = 'project_kb.pl'
 
 def chebyshev_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> int:
     x1, y1 = point1
@@ -91,41 +88,26 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
 def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
     done = False
     monster_type = None
+    monster_loc = None
     path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
     actions = actions_from_path(start, path[1:])
-    
+
     if graphics:
         image = plt.imshow(pixel_map[100:270, 500:760])
 
     for index, action in enumerate(actions):
-        
-        if not monster_type:
-            monster_type = get_monster_type(game_map)
-           
-        if monster_type == 'N': #NAGA -> KB TILL THE END
-            kb = Prolog()
-            kb.consult(KB_PATH)
-            game_map_to_kb(color_map, game_map, kb)
-            try:
-                del actions[index:]
-                del path[index + 1:]
-                action = list(KB.query('action(X)'))[0]
-                action = action['X']                
-                actions.append(translate_action(action))
-                path.append(get_resulting_position(path[index][0], path[index][1], action)) #PASSING AGENT COORDS
-                actions.append(None)
-            except Exception as e:
-                action = None
-            if not action:
-                print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
-        else:    
+        if get_monster_location(game_map) != monster_loc:   # if monster moved from previous location
+            monster_loc = get_monster_location(game_map)
+            # we get the monster type to derive statistics
+            if monster_type is None:
+                monster_type = get_monster_type(game_map)
             new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
             del actions[index:]                                                                     # delete actions from previous path
             actions.extend(actions_from_path(path[index], new_path[1:]))                            # add new actions to actions list
             action = actions[index]                                                                 # update action
             del path[index:]                                                                        # delete path from previous path
             path.extend(new_path)                                                                   # add new path to path list
-                        
+                    
         s, _, done, info = env.step(action)
         if render:
             env.render()

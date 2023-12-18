@@ -4,6 +4,8 @@ import time
 from pyswip import Prolog
 from minihack import LevelGenerator
 from minihack import RewardManager
+from map_utils import *
+import numpy as np
 
 def define_reward():
     reward_manager = RewardManager()
@@ -13,6 +15,19 @@ def define_reward():
     # ^ DOESNT WORK
     
     return reward_manager
+
+def translate_action(action):
+    
+    if 'northeast' in action: action_id = 4
+    elif 'southeast' in action: action_id = 5
+    elif 'southwest' in action: action_id = 6
+    elif 'northwest' in action: action_id = 7
+    elif 'north' in action: action_id = 0
+    elif 'east' in action: action_id = 1
+    elif 'south' in action: action_id = 2
+    elif 'west' in action: action_id = 3
+
+    return action_id
 
 def perform_action(action, env):
     
@@ -27,6 +42,66 @@ def perform_action(action, env):
     # print(f'Action performed: {repr(env.actions[action_id])}')
     obs, reward, done, info = env.step(action_id)
     return obs, reward, done, info
+
+def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog):
+    kb.retractall("position(_,_,_)")
+    asserts = []
+
+    #GETTING PLAYER COORDS
+    agent_r, agent_c = get_player_location(game_map) #
+    kb.asserta(f'position(agent, {agent_r}, {agent_c})') 
+    asserts.append(f'position(agent, {agent_r}, {agent_c}).')
+
+    #GETTING STAIRS COORD
+    target_r, target_c = get_target_location(game_map) 
+    if target_r is not None and target_c is not None:
+        kb.asserta(f'position(down_stairs, {target_r}, {target_c})')
+        asserts.append(f'position(down_stairs, {target_r}, {target_c}).') 
+    else:
+        print("No stairs seen")
+
+    #GETTING MOSNTER COORDS
+    monster_r, monster_c = get_monster_location(game_map)
+    if target_r is not None and target_c is not None:
+        kb.asserta(f'position(enemy, {target_r}, {target_c})')
+        asserts.append(f'position(enemy, {target_r}, {target_c}).')
+    else:
+        print("No monster seen")
+        
+    for i in range(game_map.shape[0]):
+        for j in range(game_map.shape[1]):
+            if not (game_map[i][j] == 0).all():
+                obj = (game_map[i][j])
+                
+                if is_tree(obj,(color_map[i][j])):
+                    kb.asserta(f'position(tree, {i}, {j})')
+                    asserts.append(f'position(tree, {i}, {j}).')
+                    
+                elif is_cloud(obj,(color_map[i][j])):
+                    kb.asserta(f'position(cloud, {i}, {j})')
+                    asserts.append(f'position(cloud, {i}, {j}).')
+
+                elif is_floor(obj):
+                    kb.asserta(f'position(floor, {i}, {j})')
+                    asserts.append(f'position(floor, {i}, {j}).')
+
+                elif is_upstairs(obj):
+                    kb.asserta(f'position(up_stairs, {i}, {j})')
+                    asserts.append(f'position(up_stairs, {i}, {j}).')
+                    
+                '''
+                elif 'dark' in obj:
+                    kb.asserta(f'position(dark, {i}, {j})')
+                    asserts.append(f'position(dark, {i}, {j}).')
+
+                
+
+                elif 'boulder' in obj:
+                    kb.asserta(f'position(boulder, {i}, {j})')
+                    asserts.append(f'position(boulder, {i}, {j}).')
+                '''
+                
+    return asserts
 
 def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
     kb.retractall("position(_,_,_)")
