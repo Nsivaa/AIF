@@ -36,7 +36,7 @@ def get_target_location(game_map: np.ndarray, symbol : str = _Characters.STAIRS.
         return (None, None)
     return (x[0], y[0])
 
-def get_monster_location(game_map: np.ndarray):
+def get_monster_location(game_map: np.ndarray) -> Tuple[int, int]:
     for monster in _Characters.MONSTERS.value:
         locations = np.where(game_map == ord(monster))
         if locations[0].size > 0:  # If a monster is found, return its position
@@ -84,16 +84,16 @@ def get_resulting_position(start_x: int, start_y: int, direction: int):
     if direction == _Moves.SOUTH.value:
             return start_x, start_y - 1
 
-    if direction == _Moves.NORTHWEST.value:
+    if direction == _Moves.NORTH_WEST.value:
             return start_x - 1 , start_y + 1
 
-    if direction == _Moves.NORTHEAST.value:
+    if direction == _Moves.NORTH_EAST.value:
             return start_x + 1, start_y + 1
 
-    if direction == _Moves.SOUTHWEST.value:
+    if direction == _Moves.SOUTH_WEST.value:
             return start_x - 1, start_y - 1
 
-    if direction == _Moves.SOUTHEAST.value:
+    if direction == _Moves.SOUTH_EAST.value:
             return start_x + 1, start_y - 1
     else:
         print('Direction invalid')

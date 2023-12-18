@@ -61,10 +61,11 @@ def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog):
         print("No stairs seen")
 
     #GETTING MOSNTER COORDS
-    monster_r, monster_c = get_monster_location(game_map)
-    if target_r is not None and target_c is not None:
-        kb.asserta(f'position(enemy, {target_r}, {target_c})')
-        asserts.append(f'position(enemy, {target_r}, {target_c}).')
+    monster_position = get_monster_location(game_map)
+    if monster_position is not None:
+        monster_r, monster_c = monster_position
+        kb.asserta(f'position(enemy, {monster_r}, {monster_c})')
+        asserts.append(f'position(enemy, {monster_r}, {monster_c}).')
     else:
         print("No monster seen")
         
