@@ -91,6 +91,56 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
 def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
     done = False
     monster_type = None
+    monster_loc = None
+    path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
+    actions = actions_from_path(start, path[1:])
+
+    if graphics:
+        image = plt.imshow(pixel_map[100:270, 500:760])
+
+    for index, action in enumerate(actions):
+        if get_monster_location(game_map) != monster_loc:   # if monster moved from previous location
+            monster_loc = get_monster_location(game_map)
+            # we get the monster type to derive statistics
+            if monster_type is None:
+                monster_type = get_monster_type(game_map)
+            new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
+            del actions[index:]                                                                     # delete actions from previous path
+            actions.extend(actions_from_path(path[index], new_path[1:]))                            # add new actions to actions list
+            action = actions[index]                                                                 # update action
+            del path[index:]                                                                        # delete path from previous path
+            path.extend(new_path)                                                                   # add new path to path list
+                    
+        s, _, done, info = env.step(action)
+        if render:
+            env.render()
+        
+        if graphics:
+            display.display(plt.gcf())
+            time.sleep(0.5)
+            display.clear_output(wait=True)
+            image.set_data(s['pixel'][100:270, 500:760])
+
+        if done:
+            end_status = info.get('end_status')
+            if end_status == 2:
+                if not suppress:
+                    print("The agent successfully completed the task!")
+                return "W", monster_type
+            if end_status == 1:
+                if not suppress:
+                    print("The agent died.")
+                return "L", monster_type
+            if not suppress:
+                print("The game ended for other reasons.")
+            return "O", monster_type
+        
+    return "Not Finished", monster_type 
+
+
+def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
+    done = False
+    monster_type = None
     path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
     actions = actions_from_path(start, path[1:])
     
