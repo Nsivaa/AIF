@@ -43,7 +43,7 @@ def perform_action(action, env):
     obs, reward, done, info = env.step(action_id)
     return obs, reward, done, info
 
-def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog):
+def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog) -> List:
     kb.retractall("position(_,_,_)")
     asserts = []
 
@@ -66,8 +66,6 @@ def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog):
         monster_r, monster_c = monster_position
         kb.asserta(f'position(enemy, {monster_r}, {monster_c})')
         asserts.append(f'position(enemy, {monster_r}, {monster_c}).')
-    else:
-        print("No monster seen")
         
     for i in range(game_map.shape[0]):
         for j in range(game_map.shape[1]):
@@ -89,19 +87,7 @@ def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog):
                 elif is_upstairs(obj):
                     kb.asserta(f'position(up_stairs, {i}, {j})')
                     asserts.append(f'position(up_stairs, {i}, {j}).')
-                    
-                '''
-                elif 'dark' in obj:
-                    kb.asserta(f'position(dark, {i}, {j})')
-                    asserts.append(f'position(dark, {i}, {j}).')
 
-                
-
-                elif 'boulder' in obj:
-                    kb.asserta(f'position(boulder, {i}, {j})')
-                    asserts.append(f'position(boulder, {i}, {j}).')
-                '''
-                
     return asserts
 
 def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
@@ -159,13 +145,13 @@ def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
 # indexes for showing the image are hard-coded
 #if we are using a .des file instead of hidenseek, coordinates change
 def show_match(states: list):
-        image = plt.imshow(states[0][90:270, 300:510])
+        image = plt.imshow(states[0][115:275, 480:750])
         for state in states[1:]:
-            time.sleep(0.75)
+            #time.sleep(0.75)
             display.display(plt.gcf())
             display.clear_output(wait=True)
-            image.set_data(state[90:270, 300:510])
-        time.sleep(0.25)
+            image.set_data(state[115:275, 480:750])
+        #time.sleep(0.25)
         display.display(plt.gcf())
         display.clear_output(wait=True)
    

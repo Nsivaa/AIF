@@ -139,6 +139,8 @@ def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tup
 
 
 def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
+    kb = Prolog()
+    kb.consult(KB_PATH)
     done = False
     monster_type = None
     path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
@@ -146,16 +148,23 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
     
     if graphics:
         image = plt.imshow(pixel_map[100:270, 500:760])
+        
+
+    if render:
+        env.render()
 
     for index, action in enumerate(actions):
         
+        if graphics:
+            display.display(plt.gcf())
+           # time.sleep(0.5)
+            display.clear_output(wait=True)
+
         if not monster_type:
             monster_type = get_monster_type(game_map)
            
         if monster_type == 'N': #NAGA -> KB TILL THE END
-            kb = Prolog()
-            kb.consult(KB_PATH)
-            game_map_to_kb(color_map, game_map, kb)
+            asserts = game_map_to_kb(color_map, game_map, kb)
             try:
                 del actions[index:]
                 del path[index + 1:]
@@ -167,8 +176,9 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
                 actions.append(None)
             except Exception:
                 action = None
-            if not action:
+            if action is None:
                 print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
+        
         else:    
             new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
             del actions[index:]                                                                     # delete actions from previous path
@@ -176,16 +186,12 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
             action = actions[index]                                                                 # update action
             del path[index:]                                                                        # delete path from previous path
             path.extend(new_path)                                                                   # add new path to path list
-                        
+        
         s, _, done, info = env.step(action)
-        if render:
-            env.render()
         
         if graphics:
-            display.display(plt.gcf())
-            time.sleep(0.5)
-            display.clear_output(wait=True)
             image.set_data(s['pixel'][100:270, 500:760])
+            
 
         if done:
             end_status = info.get('end_status')
@@ -213,15 +219,16 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
         if des_file is None:
             env = gym.make(setting, observation_keys=["chars", "colors"])
         else: 
-            env = gym.make(setting, des_file=des_file, observation_keys=["chars", "colors"])
+            env = gym.make(setting, des_file=des_file, observation_keys=["chars", "colors", "pixel"])
         state = env.reset()
         game_map = state["chars"]
         color_map = state["colors"]
+        pixel_map = state["pixel"]
         start = get_player_location(game_map)
         target = get_target_location(game_map)
         if target == (None, None):
             continue
-        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic, suppress=True)
+        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic, suppress=True, graphics = True, pixel_map = pixel_map)
         if actions == "W":
             win += 1
             monsters_win.append(monster_type)
