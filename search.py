@@ -6,7 +6,8 @@ import numpy as np
 import time
 import IPython.display as display
 import matplotlib.pyplot as plt
-from map_utils import get_monster_location, get_monster_type, get_player_location, get_target_location, get_valid_moves, is_cloud, actions_from_path, get_clouds_location
+from itertools import groupby
+from map_utils import *
 
 MIN_COST = 0
 MAX_COST = 10**5
@@ -24,7 +25,7 @@ def euclidean_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> floa
 def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np.ndarray, precision: str) -> int:
     monster_position = get_monster_location(game_map)
 
-    # if monster is in known position then we exploit clouds to avoid it
+    # If the monster is in a known position, we exploit clouds to avoid it
     if monster_position is not None:
         if is_cloud(game_map[position], color_map[position]):
             return np.reciprocal(np.floor(float(chebyshev_distance(position, monster_position))))   # the floor gives the cloud a better cost (in some cases)
@@ -33,16 +34,17 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
             return MAX_COST
         return np.reciprocal(float(monster_distance))
     
-    # updating at each step
+    # Updating at each step
     if precision == 'advanced':
         cost = 0.0
         clouds = get_clouds_location(game_map, color_map)
-        # insted, if monster is in unkown position then we sum the "danger" of each cloud hiding a monster
-        for avoid_position in clouds:
-            distance = chebyshev_distance(position, avoid_position)
-            if distance == 0:                   # position is either a cloud or a monster
-                return MAX_COST                 # maximum danger
-            cost += np.reciprocal(float(distance))
+        if clouds:
+            # Instead, if the monster is in an unkown position, we sum the "danger" of each cloud hiding a monster
+            for avoid_position in clouds:
+                distance = chebyshev_distance(position, avoid_position)
+                if distance == 0:                   # Position is either a cloud or a monster
+                    return MAX_COST                 # Maximum danger
+                cost += np.reciprocal(float(distance))
         return cost
     # updating each type the monster comes clear
     elif precision == 'base':
@@ -161,3 +163,199 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
             monsters_loss.append(monster_type)
 
     return win, loss, monsters_win, monsters_loss
+
+
+def next_target(game_map, color_map, prev_targets, current_position, monster_position):
+    possible_targets = []
+
+    if get_floor_location(game_map):
+        possible_targets = get_floor_location(game_map)
+    else:
+        # Aggiungi le nuvole alle posizioni di potenziali target se:
+        # - ci sono 3 o meno posizioni esplorabili
+        # - quasi tutte le posizioni esplorabili sono già state esplorate
+        # - il mostro è visibile
+        if len(possible_targets) <= 3 or (sum(el in prev_targets for el in possible_targets) == len(prev_targets)) or monster_position is not None:
+            if get_clouds_location(game_map, color_map):
+                possible_targets = get_clouds_location(game_map, color_map)
+    
+    if len(possible_targets) > 5:
+        # Trova come posizione di frontiera solo i max/min di una colonna
+        results = frontier_position2(possible_targets)
+    else:
+        map_ = entire_map(game_map, color_map)
+        # Trova tutte le posizioni di frontiera (walkable, quindi solo nuvole o floor)
+        results = frontier_position1(map_, game_map, color_map)
+
+    if current_position in results:
+        results.remove(current_position)
+    
+    # Genera un indice casuale
+    indice_casuale = np.random.randint(0, len(results))
+    # Seleziona l'elemento corrispondente all'indice casuale
+    prossima_posizione = results[indice_casuale]
+
+    return prossima_posizione
+
+
+def frontier_position2(possible_targets):
+    # Ordina le tuple prima per il primo elemento (x) e poi per il secondo (y)
+    sorted_tuples = sorted(possible_targets, key=lambda x: (x[0], x[1]))
+
+    # Raggruppa le tuple per il primo elemento
+    grouped = groupby(sorted_tuples, key=lambda x: x[0])
+    results = []
+    for _, group in grouped:
+        tuples = list(group)
+        min_tuple = min(tuples, key=lambda x: x[1])
+        max_tuple = max(tuples, key=lambda x: x[1])
+        results.append(min_tuple)
+        if min_tuple != max_tuple:
+            results.append(max_tuple)
+
+    return results
+
+def frontier_position1(entire_map, game_map, color_map):
+    frontier = []
+
+    # Definisci le direzioni dei vicini
+    neighbor_directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+    
+    # Controlla ciascun vicino di ciascuna posizione
+    for position in entire_map:
+        x, y = position
+        for dx, dy in neighbor_directions:
+            neighbor_pos = (x + dx, y + dy)
+            x, y = position
+
+            # Se a una posizione manca anche un solo vicino, è una posizione di frontiera
+            # Ma viene aggiunta solo se non è un albero o il mostro (ovviamente, non possono essere presi questi comne target) 
+            if neighbor_pos not in entire_map:
+                if not ((is_tree(game_map[x,y], color_map[x,y])) and (position != get_monster_location(game_map))):
+                    frontier.append(position)
+                break
+
+    return frontier
+
+# Recupera le posizioni di tutto nella mappa
+def entire_map(game_map, color_map):
+    if get_floor_location(game_map):
+        entire_map = get_floor_location(game_map)
+    
+    if get_clouds_location(game_map, color_map):
+        entire_map += get_clouds_location(game_map, color_map)
+    
+    if get_tree_location(game_map, color_map):
+        entire_map += get_tree_location(game_map, color_map)
+    
+    if get_monster_location(game_map):
+        entire_map += get_monster_location(game_map)
+
+    entire_map.append(get_player_location(game_map))
+
+    return entire_map
+
+
+def dynamic_pathfinding_po(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = True) -> Tuple[str, str]:
+    done = False
+    stairs = False
+    visited_targets = []
+    monster_position = None
+    monster_type = None
+    prev_target = None
+    # Flag per vedere se è stata aggiunta la posizione fittizia
+    flag = False
+
+    if get_monster_location(game_map):
+        monster_position = get_monster_location(game_map)
+        monster_type = get_monster_type(game_map)
+
+    # Inizializza un target 
+    if get_target_location(game_map):
+        target = get_target_location(game_map)
+        stairs = True
+    else:
+        target = next_target(game_map, color_map, visited_targets, start, monster_position)
+        visited_targets.append(target)
+    
+    prev_target = target
+    path = a_star(game_map, color_map, start, target, chebyshev_distance, precision=precision)
+
+    if graphics:
+        image = plt.imshow(pixel_map[100:270, 500:760])
+
+    if path is not None:
+        actions = actions_from_path(start, path[1:])
+        # Se la lunghezza di azioni è uguale a 1, aggiungiamo un'azione casuale (solo per non uscire subito dal ciclo for)
+        # Questa azione fasulla sarà rimossa dopo e non influirà sul percorso dell'agente (l'agente non la compierà mai)
+        if len(actions) == 1 and stairs == False:
+            actions.append(1)
+            flag = True
+
+        for index, action in enumerate(actions):
+            # Se non hai ancora trovato le scale, controlla se le vedi, altrimenti prendi come obiettivo una casella casuale
+            # Una volta che hai trovato le scale il target non cambia più (nemmeno il percorso, a meno che non ci sia il mostro)
+            if stairs == False:
+                if get_target_location(game_map):
+                    target = get_target_location(game_map)
+                    stairs = True
+                else:
+                    monster_position =  get_monster_location(game_map)
+                    if monster_position:
+                        monster_type = get_monster_type(game_map)
+                    # Se prima è stata aggiunta la posizione fittizia, calcola un nuovo target 
+                    if flag == True:
+                        possible_target = next_target(game_map, color_map, prev_target, path[index], monster_position)
+                        prev_target = target
+                        target = possible_target
+                        # Aggiungi il target a quelli già presi come obiettivo 
+                        if target not in visited_targets:
+                            visited_targets.append(target)
+
+            if prev_target != target or monster_position is not None or stairs == True:
+                # A* ricalcolato quando cambia il target (= siamo arrivati al target), quando c'è il mostro (senza cambiare target),
+                # O quando troviamo le scale (la prima volta)
+                new_path = a_star(game_map, color_map, path[index], target, chebyshev_distance, precision)       
+            
+                if new_path is not None:
+                    del actions[index:]                                     
+                    actions.extend(actions_from_path(path[index], new_path[1:]))           
+                    action = actions[index]                                                                 
+                    del path[index:]                                    
+                    path.extend(new_path)
+                else: 
+                    break
+
+            s, _, done, info = env.step(action)
+
+            # Se aggiungiamo la posizione fittizia, impostiamo il flag a True
+            if len(actions[index:]) == 1 and stairs == False:
+                actions.append(1)
+                flag = True 
+            else:
+                flag = False
+
+            if render:
+                 env.render()
+                    
+            if graphics:
+                display.display(plt.gcf())
+                time.sleep(0.5)
+                display.clear_output(wait=True)
+                image.set_data(s['pixel'][100:270, 500:760])
+
+            if done:
+                end_status = info.get('end_status')
+                if end_status == 2:
+                    if not suppress:
+                        print("The agent successfully completed the task!")
+                    return "W", monster_type
+                if end_status == 1:
+                    if not suppress:
+                        print("The agent died.")
+                    return "L", monster_type
+                if not suppress:
+                    print("The game ended for other reasons.")
+                return "O", monster_type
+
+    return "Not Finished", monster_type
