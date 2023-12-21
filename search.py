@@ -179,13 +179,13 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
             if action is None:
                 print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
         
-        else:    
-            new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
-            del actions[index:]                                                                     # delete actions from previous path
-            actions.extend(actions_from_path(path[index], new_path[1:]))                            # add new actions to actions list
-            action = actions[index]                                                                 # update action
-            del path[index:]                                                                        # delete path from previous path
-            path.extend(new_path)                                                                   # add new path to path list
+        # else:
+        #     new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
+        #     del actions[index:]                                                                     # delete actions from previous path
+        #     actions.extend(actions_from_path(path[index], new_path[1:]))                            # add new actions to actions list
+        #     action = actions[index]                                                                 # update action
+        #     del path[index:]                                                                        # delete path from previous path
+        #     path.extend(new_path)                                                                   # add new path to path list
         
         s, _, done, info = env.step(action)
         
@@ -209,7 +209,7 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
         
     return "Not Finished", monster_type 
 
-def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic: callable = chebyshev_distance, des_file: str = None, evaluation_steps: int = 100) -> Tuple[int, int, List[str], List[str]]:
+def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic: callable = chebyshev_distance, des_file: str = None, evaluation_steps: int = 100, graphics: bool = False) -> Tuple[int, int, List[str], List[str]]:
     monsters_win = []
     monsters_loss = []
     win = 0
@@ -223,17 +223,23 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
         state = env.reset()
         game_map = state["chars"]
         color_map = state["colors"]
-        pixel_map = state["pixel"]
+        
+        if graphics:
+            pixel_map = state["pixel"]
+        else:
+            pixel_map = None
+        
         start = get_player_location(game_map)
         target = get_target_location(game_map)
         if target == (None, None):
             continue
-        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic, suppress=True, graphics = True, pixel_map = pixel_map)
+        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic, suppress=True, graphics=graphics, pixel_map=pixel_map)
         if actions == "W":
             win += 1
             monsters_win.append(monster_type)
         else:
             loss += 1
             monsters_loss.append(monster_type)
+        env.close()
 
     return win, loss, monsters_win, monsters_loss
