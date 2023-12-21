@@ -3,7 +3,7 @@
 :- dynamic(unwalkable_position/2).
 :- dynamic(already_walked/2).
 :- dynamic(lastKnownEnemyPosition/2).
-
+%TODO: IMPLEMENTARE: se tra la posizione X di spostamento e la perpendicolare o diagonale del ostro c'è un alberp, è cmq una safe position
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
 % TODO: togliere la roba quando sei vicino alla scala
 % TODO: KB must by emptied of all already_walked/2 and lastKnownEnemyPosition/2 added when it starts a new episode
@@ -11,19 +11,24 @@
 % if stairs are at 1 distance, go for it and ignore every safety check
 %In otder to get a direction of movement the preference hierarchy for direction is : safe_position>unsafe_position>already_walked>unwalkable_position
 %unsafe_position>already_walked beacuse already walked position can lead to loops which is worse than walking in risky positions.
+% se ti trovi tra il mostro e le scale, resetti already walked
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC), is_close(AgentR, AgentC, StairsR, StairsC),
                            resulting_direction(AgentR, AgentC, StairsR, StairsC, Direction),(already_walked(AgentR,AgentC)->true;asserta(already_walked(AgentR,AgentC))).
 
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
-                           resulting_direction(AgentR, AgentC, StairsR, StairsC, D), setEnemyCloudPositions(AgentR, AgentC),
-                           IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT),(already_walked(AgentR,AgentC)->true;asserta(already_walked(AgentR,AgentC))).
+                           resulting_direction(AgentR, AgentC, StairsR, StairsC, D), checkMonsterPosition(AgentR,AgentC,StairsC,StairsR),
+                           setEnemyCloudPositions(AgentR, AgentC), IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT),
+                           (already_walked(AgentR,AgentC)->true;asserta(already_walked(AgentR,AgentC))).
 
 %if there is no stairs but the monster is visible we to a safe_position toward the monster cell until the monster moves out of the stairs.
 action(move(Direction)) :- position(agent, AgentR, AgentC),\+position(down_stairs, _,_), position(enemy,TargetR,TargetC),
                            resulting_direction(AgentR, AgentC, TargetR,TargetC, D), setEnemyCloudPositions(AgentR, AgentC),
                            IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT).
 
-
+checkMonsterPosition(AgentR,AgentC,TargetR,TargetC):- resulting_direction(AgentR, AgentC, TargetR,TargetC, D1),
+                                                        (position(enemy,MonsterR,MonsterC)->
+                                                            resulting_direction(TargetR,TargetC,MonsterR,MonsterC, D2),
+                                                            (opposite(D1,D2);is_close(MonsterR, MonsterC, AgentR, AgentC) -> retractall(already_walked(_,_));true);true).
 %the function set the last known enemy position if it is visible, if there is no enemy lastKnown position the function does nothing,
 %otherwise the function set the enemy position as if it was in the position of the 3 nearest (to the agent) cells among the ones near
 %last known position and with clouds or dark in them; That are the only 3 ones in which the monster could move (because he target the agent).
@@ -163,7 +168,7 @@ resulting_position(R, C, NewR, NewC, southwest) :-
     NewR is R+ 1, NewC is C- 1.
 
 
-%%%%%%%%%%%%%%%%%%%%%%%% FACTS %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%% FACTS %%%%%%%%%%%%%%%%%%55%%%%
 
 % OPPOSITE DIRECTIONS
 
@@ -202,3 +207,4 @@ c_clock_close_direction(northeast, north).
 
 safe_position(R,C) :- \+ unsafe_position(R,C).
 walkable_position(R,C) :- \+ unwalkable_position(R,C).
+
