@@ -176,8 +176,8 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
                 actions.append(None)
             except Exception:
                 action = None
-            if action is None:
                 print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
+                return "O", monster_type
         
         # else:
         #     new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
@@ -214,6 +214,7 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
     monsters_loss = []
     win = 0
     loss = 0
+    noAction=0
     
     for _ in range(evaluation_steps):
         if des_file is None:
@@ -237,9 +238,11 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
         if actions == "W":
             win += 1
             monsters_win.append(monster_type)
+        elif actions == "O":
+            noAction+=1
         else:
             loss += 1
             monsters_loss.append(monster_type)
         env.close()
 
-    return win, loss, monsters_win, monsters_loss
+    return win, loss,noAction, monsters_win, monsters_loss
