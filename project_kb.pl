@@ -3,7 +3,7 @@
 :- dynamic(unwalkable_position/2).
 :- dynamic(already_walked/2).
 :- dynamic(lastKnownEnemyPosition/2).
-%TODO: IMPLEMENTARE: se tra la posizione X di spostamento e la perpendicolare o diagonale del ostro c'è un alberp, è cmq una safe position
+
 % WHEN ENEMY IS NOT SEEN OR IS NOT A THREAT WE JUST MOVE TOWARDS THE GOAL
 % TODO: togliere la roba quando sei vicino alla scala
 % TODO: KB must by emptied of all already_walked/2 and lastKnownEnemyPosition/2 added when it starts a new episode
@@ -17,13 +17,13 @@ action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs
 
 action(move(Direction)) :- position(agent, AgentR, AgentC), position(down_stairs, StairsR, StairsC),
                            resulting_direction(AgentR, AgentC, StairsR, StairsC, D), checkMonsterPosition(AgentR,AgentC,StairsC,StairsR),
-                           setEnemyCloudPositions(AgentR, AgentC), IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT),
+                           setEnemyCloudPositions(AgentR, AgentC), IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT,_),
                            (already_walked(AgentR,AgentC)->true;asserta(already_walked(AgentR,AgentC))).
 
 %if there is no stairs but the monster is visible we to a safe_position toward the monster cell until the monster moves out of the stairs.
 action(move(Direction)) :- position(agent, AgentR, AgentC),\+position(down_stairs, _,_), position(enemy,TargetR,TargetC),
                            resulting_direction(AgentR, AgentC, TargetR,TargetC, D), setEnemyCloudPositions(AgentR, AgentC),
-                           IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT).
+                           IT is 0, safe_direction(AgentR, AgentC, D, D, D, Direction, IT,_).
 
 checkMonsterPosition(AgentR,AgentC,TargetR,TargetC):- resulting_direction(AgentR, AgentC, TargetR,TargetC, D1),
                                                         (position(enemy,MonsterR,MonsterC)->
@@ -68,7 +68,6 @@ resulting_direction(R1,C1,R2,C2, D) :-
         ( C1 > C2 -> D = northwest; D = northeast );
         ( C1 > C2 -> D = southwest; D = southeast )
     ))).
-
 % CHECK IF THE DIRECTION LEADS TO A SAFE POSITION
 % D = TEMPORARY DIRECTION - MAY BE UNSAFE
 % Direction = THE DEFINITIVE DIRECTION
@@ -78,7 +77,7 @@ resulting_direction(R1,C1,R2,C2, D) :-
 
 % LOOK FOR A SAFE DIRECTION IN THE CLOSEST 4
 
-safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C, NewR, NewC, D),
+safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT,safe) :- resulting_position(R, C, NewR, NewC, D),
                                       (safe_position(NewR, NewC) ->
                                         Direction=D;
                                       % else, get a new close direction
@@ -86,13 +85,13 @@ safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C,
                                         (IT < 5 ->
                                             (0 is (IT mod 2)->
                                              ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
-                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
+                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN,safe);
                                              ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
-                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));false)).
+                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN,safe));false)).
 
 % IF WE HAVENT FOUND A SAFE POSITION IN THE CLOSEST 4, WE PLAY MORE RISKY 
 
-safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C, NewR, NewC, D),
+safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT,walkable) :- resulting_position(R, C, NewR, NewC, D),
                                       (walkable_position(NewR, NewC) ->
                                         Direction=D;
                                       % else, get a new close direction
@@ -100,13 +99,13 @@ safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C,
                                         (IT < 9 ->
                                             (0 is (IT mod 2)->
                                              ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
-                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
+                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN,walkable);
                                              ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
-                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));false)).
+                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN,walkable));false)).
 
 % IF WE HAVENT FOUND A WALKABLE POSITION WE TRY THE ALREADY_WALKED POSITIONS
 
-safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C, NewR, NewC, D),
+safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT,walked) :- resulting_position(R, C, NewR, NewC, D),
                                       (already_walked(NewR, NewC) ->
                                         Direction=D;
                                       % else, get a new close direction
@@ -114,9 +113,9 @@ safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C,
                                         (IT < 9 ->
                                             (0 is (IT mod 2)->
                                              ITN is (IT + 1), clock_close_direction(CL_D, CL_ND),
-                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN);
+                                             safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN,walked);
                                              ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND),
-                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN));false)).
+                                             safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN,walked));false)).
 
 
 % UNWALKABLE POSITIONS
@@ -207,4 +206,3 @@ c_clock_close_direction(northeast, north).
 
 safe_position(R,C) :- \+ unsafe_position(R,C).
 walkable_position(R,C) :- \+ unwalkable_position(R,C).
-
