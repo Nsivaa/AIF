@@ -312,7 +312,7 @@ def dynamic_pathfinding_po(game_map: np.ndarray, color_map: np.ndarray, start: T
                         if target not in visited_targets:
                             visited_targets.append(target)
 
-            if prev_target != target or monster_position is not None or stairs == True:
+            if prev_target != target or monster_position is not None or stairs == True or flag == True:
                 # A* ricalcolato quando cambia il target (= siamo arrivati al target), quando c'è il mostro (senza cambiare target),
                 # O quando troviamo le scale (la prima volta)
                 new_path = a_star(game_map, color_map, path[index], target, chebyshev_distance, precision)       
