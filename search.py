@@ -89,12 +89,10 @@ def a_star(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], 
     return None
 
 def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
-    done = False
     monster_type = None
     monster_loc = None
     path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
     actions = actions_from_path(start, path[1:])
-
     if graphics:
         image = plt.imshow(pixel_map[100:270, 500:760])
 
@@ -133,11 +131,14 @@ def dynamic_path_finding(game_map: np.ndarray, color_map: np.ndarray, start: Tup
                 return "L", monster_type
             if not suppress:
                 print("The game ended for other reasons.")
+            
+            prnt
             return "O", monster_type
+            
         
     return "Not Finished", monster_type 
 
-
+#versione con stessa gestione di Naga e Gigante
 def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
     kb = Prolog()
     kb.consult(KB_PATH)
@@ -162,9 +163,10 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
 
         if not monster_type:
             monster_type = get_monster_type(game_map)
-           
-        if monster_type == 'N': #NAGA -> KB TILL THE END
-            asserts = game_map_to_kb(color_map, game_map, kb)
+            
+        if monster_type == 'N' or monster_type == "H" : #NAGA -> KB TILL THE END
+            asserts = game_map_to_kb(color_map, game_map, kb) 
+            temp= asserts
             try:
                 del actions[index:]
                 del path[index + 1:]
@@ -178,17 +180,133 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
                 action = None
                 print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
                 return "O", monster_type
+        s, _, done, info = env.step(action)
+        if graphics:
+            image.set_data(s['pixel'][100:270, 500:760])
+            
+
+        if done:
+            end_status = info.get('end_status')
+            if end_status == 2:
+                if not suppress:
+                    print("The agent successfully completed the task!")
+                return "W", monster_type
+            if end_status == 1:
+                if not suppress:
+                    print("The agent died.")
+                return "L", monster_type
+            if not suppress:
+                print("The game ended for other reasons.")
+            return "O", monster_type
         
-        # else:
-        #     new_path = a_star(game_map, color_map, path[index], target, heuristic, precision)       # compute new path
-        #     del actions[index:]                                                                     # delete actions from previous path
-        #     actions.extend(actions_from_path(path[index], new_path[1:]))                            # add new actions to actions list
-        #     action = actions[index]                                                                 # update action
-        #     del path[index:]                                                                        # delete path from previous path
-        #     path.extend(new_path)                                                                   # add new path to path list
+    return "Not Finished", monster_type  
+
+def get_actions_distance(monsterR: int, monsterC: int, playerR: int, playerC: int) -> int:
+    deltaR=abs(monsterR-playerR)
+    deltaC = abs(monsterC-playerC)
+    if monsterR == playerR:
+        return deltaC
+    if monsterC == playerC:
+        return deltaR
+    if deltaR == deltaC:
+        return deltaR
+    #una mossa in diagonale verso il target e ripeti
+    #target è in basso a destra
+    if monsterR> playerR:
+        if monsterC > playerC:
+            #mostro in basso a destra
+            return 1 + get_actions_distance(monsterR,monsterC,playerR + 1, playerC+1)
+        else:
+            #mostro in basso a sinistra
+            return 1 + get_actions_distance(monsterR,monsterC,playerR + 1, playerC-1)
+    else:
+        if monsterC > playerC:
+            #mostro in alto a destra
+            return 1 + get_actions_distance(monsterR,monsterC,playerR - 1, playerC+1)
+        else:
+            #mostro in alto a sinistra
+            return 1 + get_actions_distance(monsterR,monsterC,playerR - 1, playerC-1)
+        
+#versione con gestione differente per gigante rispetto a Naga
+def dpt_testv2(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], target: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = False) -> Tuple[str, str]:
+    kb = Prolog()
+    kb.consult(KB_PATH)
+    done = False
+    monster_type = None
+    path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
+    actions = actions_from_path(start, path[1:])
+    
+    if graphics:
+        image = plt.imshow(pixel_map[100:270, 500:760])
+        
+
+    if render:
+        env.render()
+    lastMoveKB=False
+    for index, action in enumerate(actions):
+        
+        if graphics:
+            display.display(plt.gcf())
+           # time.sleep(0.5)
+            display.clear_output(wait=True)
+
+        if not monster_type:
+            monster_type = get_monster_type(game_map)
+            
+        if monster_type == 'N': #NAGA -> KB TILL THE END
+            asserts = game_map_to_kb(color_map, game_map, kb) 
+            try:
+                del actions[index:]
+                del path[index + 1:]
+                action = list(kb.query('action(X)'))[0]
+                action = action['X']
+                action = translate_action(action)
+                actions.append(action)
+                path.append(get_resulting_position(path[index][0], path[index][1], action)) #PASSING AGENT COORDS
+                actions.append(None)
+            except Exception:
+                action = None
+                print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
+                return "O", monster_type 
+        elif monster_type == 'H':
+            #mostro è gigante, Se è a max due blocchi di distanza ->A* else KB
+            #quando scompare tra le nuvole segue la KB
+            monster_position = get_monster_location(game_map)
+            player_position = get_player_location(game_map) 
+            if monster_position == None:
+                distance=-1
+            else:
+                distance=get_actions_distance(monster_position[0],monster_position[1],player_position[0],player_position[1])
+            if distance <= 2 :
+                #KB
+                lastMoveKB = True
+                asserts = game_map_to_kb(color_map, game_map, kb) 
+                try:
+                    del actions[index:]
+                    del path[index + 1:]
+                    action = list(kb.query('action(X)'))[0]
+                    action = action['X']
+                    action = translate_action(action)
+                    actions.append(action)
+                    path.append(get_resulting_position(path[index][0], path[index][1], action)) #PASSING AGENT COORDS
+                    actions.append(None)
+                except Exception:
+                    action = None
+                    print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
+                    return "O", monster_type
+            #ricalcola A* quando distance è maggiore di 2 e avevamo switchato a KB lo step scorso   
+            elif lastMoveKB:
+                lastMoveKB= False
+                new_path = a_star(game_map, color_map, get_player_location(game_map), target, heuristic, precision)       # compute new path
+                del actions[index:]                                                                     # delete actions from previous path
+                actions.extend(actions_from_path(path[index], new_path[1:]))                            # add new actions to actions list
+                action = actions[index]                                                                 # update action
+                del path[index:]                                                                        # delete path from previous path
+                path.extend(new_path)
+                # add new path to path list
+        
         
         s, _, done, info = env.step(action)
-        
         if graphics:
             image.set_data(s['pixel'][100:270, 500:760])
             
@@ -209,6 +327,7 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
         
     return "Not Finished", monster_type 
 
+
 def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic: callable = chebyshev_distance, des_file: str = None, evaluation_steps: int = 100, graphics: bool = False) -> Tuple[int, int, List[str], List[str]]:
     monsters_win = []
     monsters_loss = []
@@ -217,6 +336,7 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
     noAction=0
     
     for _ in range(evaluation_steps):
+        #ogni episodio
         if des_file is None:
             env = gym.make(setting, observation_keys=["chars", "colors"])
         else: 
@@ -224,7 +344,6 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
         state = env.reset()
         game_map = state["chars"]
         color_map = state["colors"]
-        
         if graphics:
             pixel_map = state["pixel"]
         else:
