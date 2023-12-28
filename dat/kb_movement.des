@@ -1,0 +1,42 @@
+MAZE: "mylevel", ' '
+FLAGS:hardfloor,premapped
+MESSAGE: "Welcome to MiniHack!"
+INIT_MAP: solidfill,' '
+GEOMETRY:center,center
+MAP
+...........
+...........
+...........
+...........
+...........
+...........
+...........
+...........
+...........
+ENDMAP
+
+REGION:(0,0,11,9),lit,"ordinary"
+REPLACE_TERRAIN:(0,2,0,2), '.', 'T', 100%
+REPLACE_TERRAIN:(6,2,6,2), '.', 'T', 100%
+REPLACE_TERRAIN:(4,4,4,4), '.', 'T', 100%
+REPLACE_TERRAIN:(4,5,4,5), '.', 'T', 100%
+REPLACE_TERRAIN:(4,0,4,0), '.', 'T', 100%
+REPLACE_TERRAIN:(1,2,1,2), '.', 'T', 100%
+REPLACE_TERRAIN:(5,5,6,6), '.', 'T', 100%
+REPLACE_TERRAIN:(3,8,3,8), '.', 'T', 100%
+REPLACE_TERRAIN:(8,7,8,7), '.', 'T', 100%
+REPLACE_TERRAIN:(7,2,7,2), '.', 'T', 100%
+REPLACE_TERRAIN:(2,2,2,2), '.', 'T', 100%
+REPLACE_TERRAIN:(3,3,3,3), '.', 'T', 100%
+REPLACE_TERRAIN:(9,4,9,4), '.', 'T', 100%
+REPLACE_TERRAIN:(5,7,5,7), '.', 'T', 100%
+REPLACE_TERRAIN:(7,7,7,7), '.', 'T', 100%
+REPLACE_TERRAIN:(8,5,8,5), '.', 'T', 100%
+REPLACE_TERRAIN:(7,5,7,5), '.', 'T', 100%
+REPLACE_TERRAIN:(10,6,10,6), '.', 'T', 100%
+REPLACE_TERRAIN:(9,7,9,7), '.', 'T', 100%
+
+
+
+BRANCH:(0,0,0,0),(1,1,1,1)
+STAIR:(10,8),down

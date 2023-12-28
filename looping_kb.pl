@@ -42,14 +42,14 @@ safe_direction(R, C, CL_D, C_CL_D, D, Direction, IT) :- resulting_position(R, C,
                                       ( safe_position(NewR, NewC) -> Direction = D;
                                       % else, get a new close direction
                                       % and check its safety
-                                      
+                                      IT < 9 ->(
                                        (0 is (IT mod 2)) ->
                                        (ITN is (IT + 1), clock_close_direction(CL_D, CL_ND), 
                                        safe_direction(R, C, CL_ND, C_CL_D, CL_ND, Direction, ITN));
                                        
                                       (ITN is (IT + 1), c_clock_close_direction(C_CL_D, C_CL_ND), 
                                        safe_direction(R, C, CL_D, C_CL_ND, C_CL_ND, Direction, ITN))
-                                      ).
+                                      ));false.
 
 
 % UNSAFE/UNWALKABLE POSITIONS
@@ -118,7 +118,7 @@ clock_close_direction(northwest, north).
 c_clock_close_direction(north, northwest).
 c_clock_close_direction(northwest, west).
 c_clock_close_direction(west, southwest).
-c_clock_close_direction(soutwest, south).
+c_clock_close_direction(southwest, south).
 c_clock_close_direction(south, southeast).
 c_clock_close_direction(southeast, east).
 c_clock_close_direction(east, northeast). 

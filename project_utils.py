@@ -90,7 +90,7 @@ def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog) -> L
 
     return asserts
 
-def process_state(obs: dict, kb: Prolog, monsters: list, steps: int):
+def process_state(obs: dict, kb: Prolog, monsters: List, steps: int):
     kb.retractall("position(_,_,_)")
     asserts = []
     for i in range(21):
@@ -157,7 +157,8 @@ def show_match(states: list, slow : bool):
         display.display(plt.gcf())
         display.clear_output(wait=True)
 
-def evaluate(num_ep : int, max_steps : int, kb_path : str, monsters : List, env, speed : str):
+def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, show: bool):
+    monsters = ['giant', 'ettin', 'titan', 'minotaur', 'naga', 'lich', 'ogre', 'dragon', 'troll', 'Olog-hai'] #possible monsters in this environment
 
     slow = False
     if speed == "slow":
@@ -179,7 +180,8 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, monsters : List, env,
         KB.retractall("lastKnownEnemyPosition(_,_)")
     
         obs = env.reset()
-        ep_states.append(obs['pixel'])
+        if show:
+            ep_states.append(obs['pixel'])
         done = False
     
         # Main loop
@@ -203,17 +205,16 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, monsters : List, env,
             if action: 
                 obs, reward, done, info = perform_action(action, env)
             
-                # print(f'>> Current action from Prolog: {action}')
                 ep_states.append(obs['pixel'])
                # env.render()
             else:
                 print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
-                env.render()
                 
             steps += 1
     
         # Display game with interface
-        show_match(ep_states, slow)
+        if show:
+            show_match(ep_states, slow)
         # Print information about the ended episode
         print(f'Episode {episode} - {steps} steps')
         print("Episode = "+str(episode),end="\r")
