@@ -207,9 +207,7 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, sho
             
                 ep_states.append(obs['pixel'])
                # env.render()
-            else:
-                print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
-                
+            
             steps += 1
     
         # Display game with interface

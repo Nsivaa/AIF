@@ -14,12 +14,8 @@ MAP
 ...........
 ...........
 ENDMAP
-$place = { (10,8),(0,8),(10,0) }
-SHUFFLE: $place
 REGION:(0,0,11,9),lit,"ordinary"
 REPLACE_TERRAIN:(0,2,0,2), '.', 'T', 100%
 REPLACE_TERRAIN:(1,2,1,2), '.', 'T', 100%
-TERRAIN:randline (0,9),(11,0), 5, '.'
-TERRAIN:randline (0,0),(11,9), 5, '.'
 BRANCH:(0,0,0,0),(1,1,1,1)
 STAIR:(0,8),down
