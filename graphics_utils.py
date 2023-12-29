@@ -34,9 +34,9 @@ def render_actions(actions: List, env, game: np.ndarray, width: Tuple[int, int] 
 
 
 
-def plot(data, data2, width_plot, labels, x_label, y_label, title, type):
+def plot(data, plot_type, width_plot, labels, y_label, title, data2=None, x_label=None):
     
-    if type == "1":
+    if plot_type == "1":
         # Create a bar chart
         plt.bar(labels, data, color=['orange', 'green'], width=width_plot)
         plt.title(title)
@@ -44,7 +44,7 @@ def plot(data, data2, width_plot, labels, x_label, y_label, title, type):
         plt.ylabel(y_label)
 
 
-    elif type == "2":
+    elif plot_type == "2":
         # Utilizzo di Counter per contare gli elementi
         counter_w = Counter(data)
         counter_l = Counter(data2)
