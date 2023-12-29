@@ -8,6 +8,7 @@ import IPython.display as display
 import matplotlib.pyplot as plt
 from itertools import groupby
 from map_utils import *
+from graphics_utils import *
 
 MIN_COST = 0
 MAX_COST = 10**5
@@ -359,3 +360,36 @@ def dynamic_pathfinding_po(game_map: np.ndarray, color_map: np.ndarray, start: T
                 return "O", monster_type
 
     return "Not Finished", monster_type
+
+def solve_and_plt(env: gym.Env, heuristic: callable, precision: str, plt_width: Tuple[int, int], plt_height: Tuple[int, int], dynamic: bool = False, suppress = False, rate: bool = False, graph: bool = True):
+    state = env.reset()
+    game_map = state["chars"]
+    color_map = state["colors"]
+    pixel_map = state["pixel"]
+
+    start = get_player_location(game_map)
+    target = get_target_location(game_map)
+
+    if dynamic:
+        x, y = dynamic_path_finding(game_map, color_map, start, target, env, heuristic, precision=precision, graphics=graph, pixel_map=pixel_map, suppress=suppress)
+        if rate:
+            return x, y
+    else:
+        path = a_star(game_map, color_map, start, target, heuristic, precision=precision)
+        actions = actions_from_path(start, path[1:])
+        x, y = render_actions(actions, env, pixel_map, plt_width, plt_height, suppress = suppress, game_map = game_map, graphics = graph)
+        if rate:
+            return x, y
+
+def simple_evaluation(env: gym.Env, precision: str, dynamic: bool = False, steps: int = None):
+    i = 0
+    win = 0
+
+    while i < steps:
+        actions, monster_type = solve_and_plt(env, heuristic = chebyshev_distance, precision = precision, plt_width=(100, 270), plt_height=(500, 760), dynamic = dynamic, suppress = True, rate = True, graph = False)
+
+        if actions == "W":
+            win += 1
+        i += 1
+
+    return win
