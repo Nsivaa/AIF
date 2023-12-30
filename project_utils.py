@@ -2,18 +2,12 @@ import matplotlib.pyplot as plt
 import IPython.display as display
 import time
 from pyswip import Prolog
-from minihack import LevelGenerator
 from minihack import RewardManager
 from map_utils import *
 import numpy as np
 
 def define_reward():
     reward_manager = RewardManager()
-    #THERE IS NO DEATH EVENT SO WE USE THIS
-    # -> DEATH SHOULD BE PENALISED MORE THAN RUNNING OUT OF STEPS
-    # reward_manager.add_message_event(msgs=["End status: DEATH"], reward= -0.5, terminal_required=False, terminal_sufficient=True) 
-    # ^ DOESNT WORK
-    
     return reward_manager
 
 def translate_action(action):
@@ -31,14 +25,7 @@ def translate_action(action):
 
 def perform_action(action, env):
     
-    if 'northeast' in action: action_id = 4
-    elif 'southeast' in action: action_id = 5
-    elif 'southwest' in action: action_id = 6
-    elif 'northwest' in action: action_id = 7
-    elif 'north' in action: action_id = 0
-    elif 'east' in action: action_id = 1
-    elif 'south' in action: action_id = 2
-    elif 'west' in action: action_id = 3
+    action_id = translate_action(action)
     # print(f'Action performed: {repr(env.actions[action_id])}')
     obs, reward, done, info = env.step(action_id)
     return obs, reward, done, info
@@ -128,15 +115,12 @@ def process_state(obs: dict, kb: Prolog, monsters: List, steps: int):
                     kb.asserta(f'position(boulder, {i}, {j})')
                     asserts.append(f'position(boulder, {i}, {j}).')
 
-                is_there_monster = [value for value in monsters if value in obj]
+                is_there_monster = [value for value in monsters.keys() if value in obj]
                 if (is_there_monster):
                     kb.asserta(f'position(enemy, {i}, {j})')
                     asserts.append(f'position(enemy, {i}, {j}).')
 
-                try:    
-                    enemies_list = list(kb.query('position(enemy,_,_)'))[0]
-                except Exception as e:
-                    enemies_list = None
+                
 
     return asserts
 
@@ -158,7 +142,7 @@ def show_match(states: list, slow : bool):
         display.clear_output(wait=True)
 
 def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, show: bool):
-    monsters = ['giant', 'ettin', 'titan', 'minotaur', 'naga', 'lich', 'ogre', 'dragon', 'troll', 'Olog-hai'] #possible monsters in this environment
+    monsters = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0} #possible monsters in this environment
 
     slow = False
     if speed == "slow":
