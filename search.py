@@ -15,7 +15,7 @@ from itertools import groupby
 
 MIN_COST = 0
 MAX_COST = 10**5
-KB_PATH = 'project_kb.pl'
+KB_PATH = 'kbs/project_kb.pl'
 
 def chebyshev_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> int:
     x1, y1 = point1
