@@ -5,6 +5,7 @@ import numpy as np
 class _Colors(Enum):
     GREEN = 2
     WHITE = 15
+    BLACK = 0
 
 class _Characters(Enum):
     PLAYER = "@"
@@ -33,7 +34,7 @@ def get_player_location(game_map: np.ndarray, symbol : str = _Characters.PLAYER.
 def get_target_location(game_map: np.ndarray, symbol : str = _Characters.STAIRS.value) -> Tuple[int, int]:
     x, y = np.where(game_map == ord(symbol))
     if x.size == 0 or y.size == 0:
-        return (None, None)
+        return None
     return (x[0], y[0])
 
 def get_monster_location(game_map: np.ndarray) -> Tuple[int, int]:
@@ -50,10 +51,21 @@ def get_monster_type(game_map: np.ndarray) -> str:
             return monster
     return None
 
+def get_floor_location(game_map: np.array, symbol : str = _Characters.FLOOR.value) -> List[Tuple[int, int]]:
+    locations = np.where(game_map == ord(symbol))
+    if locations[0].size > 0:  
+        return list(zip(locations[0], locations[1]))
+    return None 
+
 def get_clouds_location(game_map: np.ndarray, color_map: np.ndarray) -> List[Tuple[int, int]]:
     locations = np.where(np.logical_and(game_map == ord(_Characters.HASHTAG.value), color_map != _Colors.GREEN.value))
     if locations[0].size > 0:
         return list(zip(locations[0], locations[1]))
+    else:
+        return None
+
+def is_black(color_element: int) -> bool:
+    return(color_element == _Colors.BLACK.value)
 
 def is_wall(position_element: int) -> bool:
     return chr(position_element) in _Characters.OBSTACLES.value
@@ -104,28 +116,28 @@ def get_valid_moves(game_map: np.ndarray, colors: np.ndarray, current_position: 
     valid = []
     x, y = current_position    
     # North
-    if y - 1 > 0 and not is_wall(game_map[x, y-1]) and not is_tree(game_map[x, y-1], colors[x, y-1]):
+    if y - 1 > 0 and not is_wall(game_map[x, y-1]) and not is_tree(game_map[x, y-1], colors[x, y-1]) and not is_black(colors[x, y-1]):
         valid.append((x, y-1)) 
     # East 
-    if x + 1 < x_limit and not is_wall(game_map[x+1, y]) and not is_tree(game_map[x+1, y], colors[x+1, y]):
+    if x + 1 < x_limit and not is_wall(game_map[x+1, y]) and not is_tree(game_map[x+1, y], colors[x+1, y]) and not is_black(colors[x+1, y]):
         valid.append((x+1, y)) 
     # South
-    if y + 1 < y_limit and not is_wall(game_map[x, y+1]) and not is_tree(game_map[x, y+1], colors[x, y+1]):
+    if y + 1 < y_limit and not is_wall(game_map[x, y+1]) and not is_tree(game_map[x, y+1], colors[x, y+1]) and not is_black(colors[x, y+1]):
         valid.append((x, y+1)) 
     # West
-    if x - 1 > 0 and not is_wall(game_map[x-1, y]) and not is_tree(game_map[x-1, y], colors[x-1, y]):
+    if x - 1 > 0 and not is_wall(game_map[x-1, y]) and not is_tree(game_map[x-1, y], colors[x-1, y]) and not is_black(colors[x-1, y]):
         valid.append((x-1, y))
     # North - West
-    if x - 1 > 0 and y - 1 > 0 and not is_wall(game_map[x-1, y-1]) and not is_tree(game_map[x-1, y-1], colors[x-1, y-1]):
+    if x - 1 > 0 and y - 1 > 0 and not is_wall(game_map[x-1, y-1]) and not is_tree(game_map[x-1, y-1], colors[x-1, y-1]) and not is_black(colors[x-1, y-1]):
         valid.append((x-1, y-1))
     # South - East
-    if x + 1 < x_limit and y + 1 < y_limit and not is_wall(game_map[x+1, y+1]) and not is_tree(game_map[x+1, y+1], colors[x+1, y+1]):
+    if x + 1 < x_limit and y + 1 < y_limit and not is_wall(game_map[x+1, y+1]) and not is_tree(game_map[x+1, y+1], colors[x+1, y+1]) and not is_black(colors[x+1, y+1]):
         valid.append((x+1, y+1))
     # Southh - West
-    if x - 1 > 0 and y + 1 < y_limit and not is_wall(game_map[x-1, y+1]) and not is_tree(game_map[x-1, y+1], colors[x-1, y+1]):
+    if x - 1 > 0 and y + 1 < y_limit and not is_wall(game_map[x-1, y+1]) and not is_tree(game_map[x-1, y+1], colors[x-1, y+1]) and not is_black(colors[x-1, y-1]):
         valid.append((x-1, y+1))
     # Notht - East 
-    if x + 1 < x_limit and y - 1 > 0 and not is_wall(game_map[x+1, y-1]) and not is_tree(game_map[x+1, y-1], colors[x+1, y-1]):
+    if x + 1 < x_limit and y - 1 > 0 and not is_wall(game_map[x+1, y-1]) and not is_tree(game_map[x+1, y-1], colors[x+1, y-1]) and not is_black(colors[x+1, y-1]):
         valid.append((x+1, y-1))
 
     return valid
