@@ -64,6 +64,13 @@ def get_clouds_location(game_map: np.ndarray, color_map: np.ndarray) -> List[Tup
     else:
         return None
 
+def get_tree_location(game_map: np.ndarray, color_map: np.ndarray) -> List[Tuple[int, int]]:
+    locations = np.where(np.logical_and(game_map == ord(_Characters.HASHTAG.value), color_map == _Colors.GREEN.value))
+    if locations[0].size > 0:
+        return list(zip(locations[0], locations[1]))
+    else:
+        return None
+
 def is_black(color_element: int) -> bool:
     return(color_element == _Colors.BLACK.value)
 

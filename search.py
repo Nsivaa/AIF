@@ -43,12 +43,13 @@ def _compute_cost(game_map: np.ndarray, position: Tuple[int, int], color_map: np
     if precision == 'advanced':
         cost = 0.0
         clouds = get_clouds_location(game_map, color_map)
-        # insted, if monster is in unkown position then we sum the "danger" of each cloud hiding a monster
-        for avoid_position in clouds:
-            distance = chebyshev_distance(position, avoid_position)
-            if distance == 0:                   # position is either a cloud or a monster
-                return MAX_COST                 # maximum danger
-            cost += np.reciprocal(float(distance))
+        if clouds:
+            # instead, if monster is in unkown position then we sum the "danger" of each cloud hiding a monster
+            for avoid_position in clouds:
+                distance = chebyshev_distance(position, avoid_position)
+                if distance == 0:                   # position is either a cloud or a monster
+                    return MAX_COST                 # maximum danger
+                cost += np.reciprocal(float(distance))
         return cost
     # updating each type the monster comes clear
     elif precision == 'base':
@@ -329,7 +330,7 @@ def dpt_testv2(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, in
     return "Not Finished", monster_type 
 
 
-def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic: callable = chebyshev_distance, des_file: str = None, evaluation_steps: int = 100, graphics: bool = False) -> Tuple[int, int, List[str], List[str]]:
+def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic: callable = chebyshev_distance, des_file: str = None, evaluation_steps: int = 100, graphics: bool = False, po: bool = False) -> Tuple[int, int, List[str], List[str]]:
     monsters_win = []
     monsters_loss = []
     win = 0
@@ -354,7 +355,12 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
         target = get_target_location(game_map)
         if target == (None, None):
             continue
-        actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic, suppress=True, graphics=graphics, pixel_map=pixel_map)
+
+        if po:
+            actions, monster_type = function_to_evaluate(game_map, color_map, start, env, heuristic, graphics=graphics, pixel_map=pixel_map, suppress=True)
+        else:
+            actions, monster_type = function_to_evaluate(game_map, color_map, start, target, env, heuristic, suppress=True, graphics=graphics, pixel_map=pixel_map)
+        
         if actions == "W":
             win += 1
             monsters_win.append(monster_type)
@@ -367,38 +373,6 @@ def evaluate_performance(setting: str, function_to_evaluate: callable, heuristic
 
     return win, loss , noAction, monsters_win, monsters_loss
 
-
-def next_target(game_map, color_map, prev_targets, current_position, monster_position):
-    possible_targets = []
-
-    if get_floor_location(game_map):
-        possible_targets = get_floor_location(game_map)
-    else:
-        # Aggiungi le nuvole alle posizioni di potenziali target se:
-        # - ci sono 3 o meno posizioni esplorabili
-        # - quasi tutte le posizioni esplorabili sono già state esplorate
-        # - il mostro è visibile
-        if len(possible_targets) <= 3 or (sum(el in prev_targets for el in possible_targets) == len(prev_targets)) or monster_position is not None:
-            if get_clouds_location(game_map, color_map):
-                possible_targets = get_clouds_location(game_map, color_map)
-    
-    if len(possible_targets) > 5:
-        # Trova come posizione di frontiera solo i max/min di una colonna
-        results = frontier_position2(possible_targets)
-    else:
-        map_ = entire_map(game_map, color_map)
-        # Trova tutte le posizioni di frontiera (walkable, quindi solo nuvole o floor)
-        results = frontier_position1(map_, game_map, color_map)
-
-    if current_position in results:
-        results.remove(current_position)
-    
-    # Genera un indice casuale
-    indice_casuale = np.random.randint(0, len(results))
-    # Seleziona l'elemento corrispondente all'indice casuale
-    prossima_posizione = results[indice_casuale]
-
-    return prossima_posizione
 
 
 def frontier_position2(possible_targets):
@@ -442,6 +416,7 @@ def frontier_position1(entire_map, game_map, color_map):
 
 # Recupera le posizioni di tutto nella mappa
 def entire_map(game_map, color_map):
+    entire_map = []
     if get_floor_location(game_map):
         entire_map = get_floor_location(game_map)
     
@@ -457,6 +432,40 @@ def entire_map(game_map, color_map):
     entire_map.append(get_player_location(game_map))
 
     return entire_map
+
+def next_target(game_map, color_map, prev_targets, current_position, monster_position):
+    possible_targets = []
+
+    if get_floor_location(game_map):
+        possible_targets = get_floor_location(game_map)
+        if prev_targets:
+            possible_targets = [x for x in possible_targets if not any(el in prev_targets for el in x)]
+
+    if get_clouds_location(game_map, color_map):
+        # Aggiungi le nuvole alle posizioni di potenziali target se:
+        # - ci sono 3 o meno posizioni esplorabili
+        # - il mostro è visibile
+        if len(possible_targets) <= 3 or monster_position is not None:
+            possible_targets += get_clouds_location(game_map, color_map)
+    
+    if len(possible_targets) > 5:
+        # Trova come posizione di frontiera solo i max/min di una colonna
+        results = frontier_position2(possible_targets)
+    else:
+        map_ = entire_map(game_map, color_map)
+        # Trova tutte le posizioni di frontiera (walkable, quindi solo nuvole o floor)
+        results = frontier_position1(map_, game_map, color_map)
+
+    if current_position in results:
+        results.remove(current_position)
+    
+    # Genera un indice casuale
+    indice_casuale = np.random.randint(0, len(results))
+    # Seleziona l'elemento corrispondente all'indice casuale
+    prossima_posizione = results[indice_casuale]
+
+    return prossima_posizione
+
 
 
 def dynamic_pathfinding_po(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int], env: gym.Env, heuristic: callable = chebyshev_distance, precision : str = "advanced", render : bool = False, graphics = False, pixel_map: np.ndarray = None, suppress : bool = True) -> Tuple[str, str]:
