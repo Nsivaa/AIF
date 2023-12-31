@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import IPython.display as display
 import time
 from pyswip import Prolog
-from minihack import RewardManager
+from minihack import RewardManager, LevelGenerator
 from map_utils import *
 import numpy as np
 
@@ -78,7 +78,8 @@ def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog) -> L
     return asserts
 
 def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, show: bool):
-    monsters = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0, 'unknown' : 0} #possible monsters in this environment
+    monsters_losses = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0, 'unknown' : 0} #possible monsters in this environment
+    monsters_wins = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0, 'unknown' : 0} #possible monsters in this environment
 
     slow = False
     if speed == "slow":
@@ -106,7 +107,7 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, sho
         # Main loop
         while not done and steps < max_steps:
             # Get the observation from the env and assert the facts in the kb 
-            asserts, monster_name=process_state(obs, KB, monsters, steps, monster_name)
+            _, monster_name=process_state(obs, KB, monsters_wins, steps, monster_name)
             # print(f'> Current player position: {player_pos}')
             # Query Prolog
             # Run the inference and get the action to perform
@@ -135,30 +136,23 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, sho
         print(f'Episode {episode} - {steps} steps')
         print("Episode = "+str(episode),end="\r")
         
+        if monster_name is None:
+                    monster_name = 'unknown'
         try:
             print(f'End status: {info["end_status"].name}')
-                
+            #updating monster count
+            if "DEATH" in info["end_status"].name:
+                monsters_losses[monster_name] += 1
+            elif "SUCCESS" in info["end_status"].name:
+                monsters_wins[monster_name] += 1
         except NameError as e1:
             print(f'No end status info available')
-        
-        print(f'Final reward: {reward}')
 
-        if "DEATH" in info["end_status"].name:
-            #updating monster count
-            if monster_name is None:
-                monster_name = 'unknown'
-
-            monsters[monster_name] += 1
-            
         rewards.append(reward)
         obs = env.reset()
         KB.retractall("previous_agent_position(_,_)")
-        
-        
-    
-    print(f'After {num_ep} episodes, mean return is {sum(rewards)/num_ep}')
-    print(f"The rewards of the episodes are:{rewards}")
-    print(f"Monsters that got us killed: {monsters}")
+        total_rewards = sum(rewards)
+    return monsters_wins, monsters_losses, total_rewards
 
 def process_state(obs: dict, kb: Prolog, monsters: List, steps: int, monster: str):
     kb.retractall("position(_,_,_)")
@@ -225,4 +219,3 @@ def show_match(states: list, slow : bool):
             time.sleep(0.25)
         display.display(plt.gcf())
         display.clear_output(wait=True)
-
