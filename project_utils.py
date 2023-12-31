@@ -77,7 +77,90 @@ def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog) -> L
 
     return asserts
 
-def process_state(obs: dict, kb: Prolog, monsters: List, steps: int):
+def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, show: bool):
+    monsters = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0, 'unknown' : 0} #possible monsters in this environment
+
+    slow = False
+    if speed == "slow":
+        slow = True
+        
+    rewards = []
+    KB = Prolog()
+    KB.consult(kb_path)
+    for episode in range(num_ep):
+        # count the number of steps of the current episode
+        steps = 0
+        # store the cumulative reward
+        reward = 0.0
+        # collect obs['pixel'] to visualize
+        ep_states = []
+        # reset KB before eacj episode starts
+        KB.retractall("already_walked(_,_)")
+        KB.retractall("lastKnownEnemyPosition(_,_)")
+    
+        obs = env.reset()
+        if show:
+            ep_states.append(obs['pixel'])
+        done = False
+        monster_name = None
+        # Main loop
+        while not done and steps < max_steps:
+            # Get the observation from the env and assert the facts in the kb 
+            asserts, monster_name=process_state(obs, KB, monsters, steps, monster_name)
+            # print(f'> Current player position: {player_pos}')
+            # Query Prolog
+            # Run the inference and get the action to perform
+            # Get the first answer from Prolog -> the top-priority action
+            try:
+                action = list(KB.query('action(X)'))[0]
+                action = action['X']
+                #print(action)
+                #time.sleep(0.5)
+            except Exception as e:
+                action = None
+    
+            # Perform the action in the environment
+            if action: 
+                obs, reward, done, info = perform_action(action, env)
+            
+                ep_states.append(obs['pixel'])
+               # env.render()
+            
+            steps += 1
+    
+        # Display game with interface
+        if show:
+            show_match(ep_states, slow)
+        # Print information about the ended episode
+        print(f'Episode {episode} - {steps} steps')
+        print("Episode = "+str(episode),end="\r")
+        
+        try:
+            print(f'End status: {info["end_status"].name}')
+                
+        except NameError as e1:
+            print(f'No end status info available')
+        
+        print(f'Final reward: {reward}')
+
+        if "DEATH" in info["end_status"].name:
+            #updating monster count
+            if monster_name is None:
+                monster_name = 'unknown'
+
+            monsters[monster_name] += 1
+            
+        rewards.append(reward)
+        obs = env.reset()
+        KB.retractall("previous_agent_position(_,_)")
+        
+        
+    
+    print(f'After {num_ep} episodes, mean return is {sum(rewards)/num_ep}')
+    print(f"The rewards of the episodes are:{rewards}")
+    print(f"Monsters that got us killed: {monsters}")
+
+def process_state(obs: dict, kb: Prolog, monsters: List, steps: int, monster: str):
     kb.retractall("position(_,_,_)")
     asserts = []
     for i in range(21):
@@ -114,15 +197,17 @@ def process_state(obs: dict, kb: Prolog, monsters: List, steps: int):
                 elif 'boulder' in obj:
                     kb.asserta(f'position(boulder, {i}, {j})')
                     asserts.append(f'position(boulder, {i}, {j}).')
-
-                is_there_monster = [value for value in monsters.keys() if value in obj]
-                if (is_there_monster):
-                    kb.asserta(f'position(enemy, {i}, {j})')
-                    asserts.append(f'position(enemy, {i}, {j}).')
-
-                
-
-    return asserts
+                if monster is None:
+                    monster = [key for key in monsters.keys() if key in obj]
+                    if (monster):
+                        monster = str(monster[0])
+                        kb.asserta(f'position(enemy, {i}, {j})')
+                        asserts.append(f'position(enemy, {i}, {j}).')
+                    else:
+                        monster = None
+    
+    
+    return asserts, monster
 
 # DES_COORDS = [111:250, 320:495], NON-DES COORDS = [115:275, 480:750]
 
@@ -141,79 +226,3 @@ def show_match(states: list, slow : bool):
         display.display(plt.gcf())
         display.clear_output(wait=True)
 
-def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, show: bool):
-    monsters = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0} #possible monsters in this environment
-
-    slow = False
-    if speed == "slow":
-        slow = True
-        
-    rewards = []
-    KB = Prolog()
-    KB.consult(kb_path)
-    
-    for episode in range(num_ep):
-        # count the number of steps of the current episode
-        steps = 0
-        # store the cumulative reward
-        reward = 0.0
-        # collect obs['pixel'] to visualize
-        ep_states = []
-        # reset KB before eacj episode starts
-        KB.retractall("already_walked(_,_)")
-        KB.retractall("lastKnownEnemyPosition(_,_)")
-    
-        obs = env.reset()
-        if show:
-            ep_states.append(obs['pixel'])
-        done = False
-    
-        # Main loop
-        while not done and steps < max_steps:
-            # Get the observation from the env and assert the facts in the kb 
-            asserts=process_state(obs, KB, monsters, steps)
-           
-            # print(f'> Current player position: {player_pos}')
-            # Query Prolog
-            # Run the inference and get the action to perform
-            # Get the first answer from Prolog -> the top-priority action
-            try:
-                action = list(KB.query('action(X)'))[0]
-                action = action['X']
-                #print(action)
-                #time.sleep(0.5)
-            except Exception as e:
-                action = None
-    
-            # Perform the action in the environment
-            if action: 
-                obs, reward, done, info = perform_action(action, env)
-            
-                ep_states.append(obs['pixel'])
-               # env.render()
-            
-            steps += 1
-    
-        # Display game with interface
-        if show:
-            show_match(ep_states, slow)
-        # Print information about the ended episode
-        print(f'Episode {episode} - {steps} steps')
-        print("Episode = "+str(episode),end="\r")
-        
-        try:
-            print(f'End status: {info["end_status"].name}')
-                
-        except NameError as e1:
-            print(f'No end status info available')
-        
-        print(f'Final reward: {reward}')
-    
-        #time.sleep(0.75)
-        rewards.append(reward)
-        obs = env.reset()
-        KB.retractall("previous_agent_position(_,_)")
-    
-    
-    print(f'After {num_ep} episodes, mean return is {sum(rewards)/num_ep}')
-    print("The rewards of the episodes are:", rewards)
