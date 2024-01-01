@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import IPython.display as display
 import time
 from pyswip import Prolog
-from minihack import RewardManager, LevelGenerator
+from minihack import RewardManager
 from map_utils import *
 import numpy as np
 
@@ -78,9 +78,9 @@ def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog) -> L
     return asserts
 
 def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, show: bool):
-    monsters_losses = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0, 'unknown' : 0} #possible monsters in this environment
-    monsters_wins = {'giant' : 0, 'ettin' : 0, 'titan' : 0 , 'minotaur' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'Olog-hai' : 0, 'unknown' : 0} #possible monsters in this environment
-
+    monsters_losses = {'giant' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'unknown' : 0} #possible monsters in this environment
+    monsters_wins = {'giant' : 0, 'naga' : 0, 'lich' : 0, 'ogre' : 0, 'dragon' : 0, 'troll' : 0, 'unknown' : 0} #possible monsters in this environment
+    giant_likes = ["ettin", "minotaur", "titan"]
     slow = False
     if speed == "slow":
         slow = True
@@ -136,8 +136,16 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, sho
         print(f'Episode {episode} - {steps} steps')
         print("Episode = "+str(episode),end="\r")
         
+        #translate monster name to dictionary key equivalent
         if monster_name is None:
-                    monster_name = 'unknown'
+            monster_name = 'unknown'
+
+        elif monster_name in giant_likes:
+            monster_name = "giant"
+
+        elif monster_name is "Olog-hai":
+            monster_name = "troll"
+
         try:
             print(f'End status: {info["end_status"].name}')
             #updating monster count
