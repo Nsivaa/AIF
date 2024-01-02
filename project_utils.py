@@ -143,7 +143,7 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, sho
         elif monster_name in giant_likes:
             monster_name = "giant"
 
-        elif monster_name is "Olog-hai":
+        elif monster_name == "Olog-hai":
             monster_name = "troll"
 
         try:

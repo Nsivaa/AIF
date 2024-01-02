@@ -104,17 +104,8 @@ def plot(data, plot_type, width_plot, labels, y_label, title, data2=None, x_labe
 
     elif plot_type == "3":
         monsters = [labels[item] for item in data.keys()]
-        #monsters = set([labels[item] for item in data.keys()])
         x = np.arange(len(monsters))
         fig, ax = plt.subplots()
-
-        '''TODO: translate full range of 11 monsters to reduced dict of 7
-        wins = dict.fromkeys(monsters, 0)
-        losses = dict.fromkeys(monsters, 0)
-        for key, value in data: 
-            #data = wins but has same length as losses
-            wins[key] += 
-        '''
         plt.bar(x - width_plot/2, data.values(), width_plot, label='Wins', color='orange')
         plt.bar(x + width_plot/2, data2.values(), width_plot, label='Losses', color='green')
         # Aggiungi titolo e etichette agli assi
