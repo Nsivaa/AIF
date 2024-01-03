@@ -6,10 +6,6 @@ from minihack import RewardManager
 from map_utils import *
 import numpy as np
 
-def define_reward():
-    reward_manager = RewardManager()
-    return reward_manager
-
 def translate_action(action):
     
     if 'northeast' in action: action_id = 4
@@ -32,13 +28,16 @@ def perform_action(action, env):
 
 def game_map_to_kb(color_map: np.ndarray, game_map: np.ndarray, kb: Prolog) -> List:
     kb.retractall("position(_,_,_)")
+    kb.retractall("already_walked(_,_)")
+    kb.retractall("lastKnownEnemyPosition(_,_)")
     asserts = []
 
-    #GETTING PLAYER COORDS
-    agent_r, agent_c = get_player_location(game_map) #
+    #GETTING PLAYER COORD
+    agent_r, agent_c = get_player_location(game_map) 
     kb.asserta(f'position(agent, {agent_r}, {agent_c})') 
     asserts.append(f'position(agent, {agent_r}, {agent_c}).')
 
+    
     #GETTING STAIRS COORD
     target_r, target_c = get_target_location(game_map) 
     if target_r is not None and target_c is not None:
@@ -158,7 +157,6 @@ def evaluate(num_ep : int, max_steps : int, kb_path : str, env, speed : str, sho
 
         rewards.append(reward)
         obs = env.reset()
-        KB.retractall("previous_agent_position(_,_)")
         total_rewards = sum(rewards)
     return monsters_wins, monsters_losses, total_rewards
 
