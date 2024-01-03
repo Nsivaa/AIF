@@ -54,6 +54,8 @@ def render_actions(actions: List, env, game: np.ndarray, width: Tuple[int, int] 
 
 def plot(data, plot_type, width_plot, labels, y_label, title, data2=None, x_label=None, percentage=None):
     
+    plt.figure()
+    
     if plot_type == "1":
         
         # Create a bar chart
