@@ -180,7 +180,6 @@ def dpt_test(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, int]
                 actions.append(None)
             except Exception:
                 action = None
-                print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
                 return "O", monster_type
         s, _, done, info = env.step(action)
         if graphics:
