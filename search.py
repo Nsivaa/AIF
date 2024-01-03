@@ -268,7 +268,6 @@ def dpt_testv2(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, in
                 actions.append(None)
             except Exception:
                 action = None
-                print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
                 return "O", monster_type 
         elif monster_type == 'H':
             #mostro è gigante, Se è a max due blocchi di distanza ->A* else KB
@@ -294,7 +293,6 @@ def dpt_testv2(game_map: np.ndarray, color_map: np.ndarray, start: Tuple[int, in
                     actions.append(None)
                 except Exception:
                     action = None
-                    print("ERROR: impossible to perform any action. Please check assertions and definitions in KB.")
                     return "O", monster_type
             #ricalcola A* quando distance è maggiore di 2 e avevamo switchato a KB lo step scorso   
             elif lastMoveKB:
@@ -462,7 +460,7 @@ def next_target(game_map, color_map, prev_targets, current_position, monster_pos
     # Genera un indice casuale
     indice_casuale = np.random.randint(0, len(results))
     # Seleziona l'elemento corrispondente all'indice casuale
-    prossima_posizione = results[indice_casuale]
+    prossima_posizione = results[int(indice_casuale)]
 
     return prossima_posizione
 
