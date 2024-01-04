@@ -423,8 +423,9 @@ def entire_map(game_map, color_map):
     if get_tree_location(game_map, color_map):
         entire_map += get_tree_location(game_map, color_map)
     
-    if get_monster_location(game_map):
-        entire_map += get_monster_location(game_map)
+    monster_location = get_monster_location(game_map)
+    if monster_location is not None:
+        entire_map.append(monster_location)
 
     entire_map.append(get_player_location(game_map))
 
