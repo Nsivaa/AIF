@@ -1,3 +1,5 @@
+
+
 :- dynamic position/3.
 :- dynamic unsafe_position/2.
 

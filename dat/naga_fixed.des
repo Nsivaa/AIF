@@ -19,7 +19,7 @@ REGION:(0,0,11,9),lit,"ordinary"
 
 BRANCH:(0,0,0,0),(1,1,1,1)
 STAIR:(10,8),down
-MONSTER: ('N',"red naga"), (8,2), hostile
+MONSTER: ('N',"red naga"), (6,2), hostile
 REPLACE_TERRAIN:(6,4,6,4), '.', 'C', 100%
 REPLACE_TERRAIN:(1,0,1,0), '.', 'C', 100%
 REPLACE_TERRAIN:(2,0,2,0), '.', 'T', 100%
